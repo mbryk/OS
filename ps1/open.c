@@ -1,81 +1,93 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 int openfile(char **argv, int index, int flags){
 	int fd;
-	fd = open(argv[index], flags);
+	fd = open(argv[index], flags, 0777);
+	if(fd == -1){
+		fprintf(stderr, "Error opening file %s: %s\n", argv[index], strerror(errno));
+		exit(-1);
+	}
 	return fd;
 }
 
 
 int readbuf(int fd, char *buf, int b_size){
 	int n = read(fd, buf, b_size);
+	if(n==-1){
+		fprintf(stderr, "Error Reading from File: %s\n", strerror(errno));
+		exit(-1);
+	}
 	return n;
 }
 
 
-void writebuf(int fd, char *buf, int b_size){
-	int n = write(fd, buf, b_size);
-	if(n != b_size){
-		if(n <= 0){
-			write(2, "Error Write\n", 12);
-		}
-		else {
-			b_size -= n;
-			writebuf(fd, buf, b_size);
+void writebuf(int fd, char *buf, int writesize){
+	int n = write(fd, buf, writesize);
+	if(n != writesize){
+		if(n < 1){
+			/* It is possible that if n==0, errno is not set. */
+			if(errno) fprintf(stderr, "Error Writing to File: %s\n", strerror(errno));
+			else fprintf(stderr, "Error Writing to File");
+			exit(-1);
+		} else {
+			/* For Partial Writes, set new writesize to remaining characters, and recursively call function, starting buf at next unwritten char */
+			writebuf(fd, buf+n, writesize-n);
 		}
 	}
-}
-
-void clearbuf(char *buf){
-
-
 }
 
 void closefile(int fd){
-	close(fd);
+	if(fd>2){
+		int n =	close(fd);
+		if(n == -1){
+			fprintf(stderr, "Error Closing File: %s\n", strerror(errno));
+			exit(-1);
+		}
+	}
 }
 
 int main(int argc, char **argv){
-	int in_fd, out_fd, b_size, in_index, out_index, readsize;
-	char *fname;
-	int i=1;
-	int j;
-	
-	if(argc<i) return 1;
-	if(strcmp(argv[i],"-b") == 0){
-		b_size = atoi(argv[++i]);
-		++i;
-	} else {
-		b_size = 128;
-	}
+	int in_fd, out_fd, in_index, out_index, b_size;
+	int i, n;
 
-	int n = b_size;
+	i=1;
+	b_size = 1024; /* DEFAULT Buffer Size */
+	out_fd = 1; /* DEFAULT Output is stdout=1 */
+	while(argc>i){
+		if(strcmp(argv[i],"-b") == 0){
+			b_size = atoi(argv[++i]);	
+			++i;
+		}
+		if(strcmp(argv[i],"-o") == 0){
+		        out_index = ++i;
+			out_fd = openfile(argv, out_index, O_CREAT | O_WRONLY | O_TRUNC);
+			++i;
+			continue;
+		}
+		break;
+	}
 	char *buf = malloc(b_size);
+	in_index = i; /* Once done parsing the optional arguments, the next index is the first infile */
 
-	if(argc<i) return 1;
-	if(strcmp(argv[i],"-o") == 0){
-	        out_index = ++i;
-		out_fd = openfile(argv, out_index, O_CREAT | O_WRONLY);
-		++i;
-	} else {
-		out_fd = 1; /* standard output */
-	}
+	do{
+		n = 1; /* reset n to above zero for each new infile */
 
-	in_index = i;
-	for(j=in_index; j<argc; j++){
-		in_fd = strcmp(argv[j],"-")?openfile(argv, in_index, O_RDONLY):0;
+		/* This assigns input to stdin for when "-" is specified or no input file is given */
+		in_fd = ((argc>in_index)&&strcmp(argv[in_index],"-"))?openfile(argv, in_index, O_RDONLY):0;
 		while(n>0){
-			clearbuf(buf);
 			n = readbuf(in_fd, buf, b_size);
-			writebuf(out_fd,buf, n);
+			writebuf(out_fd,buf, n); /* Only write the amount that was read to buf */
 		}
 		closefile(in_fd);
-	} 
+		in_index++;
+	} while(in_index<argc);
 
 	closefile(out_fd);
 	free(buf);

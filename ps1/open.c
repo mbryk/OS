@@ -34,7 +34,7 @@ void writebuf(int fd, char *buf, int writesize){
 		if(n < 1){
 			/* It is possible that if n==0, errno is not set. */
 			if(errno) fprintf(stderr, "Error Writing to File: %s\n", strerror(errno));
-			else fprintf(stderr, "Error Writing to File");
+			else fprintf(stderr, "Error Writing to File\n");
 			exit(-1);
 		} else {
 			/* For Partial Writes, set new writesize to remaining characters, and recursively call function, starting buf at next unwritten char */
@@ -58,15 +58,27 @@ int main(int argc, char **argv){
 	int i, n;
 
 	i=1;
-	b_size = 1024; /* DEFAULT Buffer Size */
+	b_size = 4096; /* DEFAULT Buffer Size */
 	out_fd = 1; /* DEFAULT Output is stdout=1 */
 	while(argc>i){
 		if(strcmp(argv[i],"-b") == 0){
-			b_size = atoi(argv[++i]);	
+			if(argc==++i){
+				fprintf(stderr, "Error Parsing Arguments.\nNo buffer size is specified.\nOmit -b for default buffer size of 4096.\n");
+				exit(-1);
+			}
+			b_size = atoi(argv[i]);
+			if(b_size<=0){
+				fprintf(stderr, "Error Setting Buffer Size.\n%d is not a valid buffer size.\nOmit -b for default buffer size of 4096.\n", b_size);
+				exit(-1);
+			}
 			++i;
 		}
 		if(strcmp(argv[i],"-o") == 0){
 		        out_index = ++i;
+			if(argc==out_index){
+				fprintf(stderr, "Error Parsing Arguments.\nNo outfile is specified.\nOmit -o to use standard output.\n");
+				exit(-1);
+			}
 			out_fd = openfile(argv, out_index, O_CREAT | O_WRONLY | O_TRUNC);
 			++i;
 			continue;

@@ -11,7 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <limits.h>
-
+#include <time.h>
 
 int opts;
 int mdisplay=0;
@@ -52,19 +52,18 @@ static char filetypeletter(int mode)
     return(c);
 }
 
-int check_file(char *pathname, char *filename){
-	if(!strcmp(filename,".") || !strcmp(filename,".."))
-		return 0;
+int check_file(char *pathname){
 	if(opts){
 		struct stat st;
 		lstat(pathname, &st); 
-		if(mdisplay>0){
-
-		} else if(mdisplay<0) {
-
-		}
 		if((udisplay>=0) && (udisplay!=st.st_uid))
 			return 0;
+		if(mdisplay){
+			time_t tnow;
+			time(&tnow);
+			double seconds = difftime(tnow, st.st_mtime);
+			return mdisplay>0?(mdisplay<seconds):(mdisplay+seconds<0);
+		}
 	}
 	return 1;
 }
@@ -80,7 +79,7 @@ void print_info(char *pathname){
 
 		pwd = getpwuid(st.st_uid);
 		grp = getgrgid(st.st_gid);
-		time_t t = st.st_mtime;
+		time_t t = st.st_mtime; 
 		time = localtime(&t);
 		strftime(time_buf, 18, "%b %d %Y %H:%M", time);
 		
@@ -128,12 +127,12 @@ void directory(char *direct){
 		strcat(pathname, "/");
 		strcat(pathname, de->d_name);
 		
-		if(check_file(pathname, de->d_name)){
-			print_info(pathname);
-			
-			if(de->d_type == DT_DIR){
+		/* I couldn't include this in check_file, since even if check_file returns 0, we still need to further check that directory... */
+		if(strcmp(de->d_name,".") && strcmp(de->d_name,"..")){
+			if(check_file(pathname))
+				print_info(pathname);			
+			if(de->d_type == DT_DIR)
 				directory(pathname);
-			}	
 		}
 	}
 

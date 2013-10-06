@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -8,59 +9,158 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <unistd.h>
+#include <limits.h>
 
-void directory(char *dir);
 
-void file_read(struct dirent *de, char *pathname){
-		
+int opts;
+int mdisplay=0;
+int udisplay=-1;
+
+static char filetypeletter(int mode)
+{
+    char    c;
+    if (S_ISREG(mode))
+        c = '-';
+    else if (S_ISDIR(mode))
+        c = 'd';
+    else if (S_ISBLK(mode))
+        c = 'b';
+    else if (S_ISCHR(mode))
+        c = 'c';
+#ifdef S_ISFIFO
+    else if (S_ISFIFO(mode))
+        c = 'p';
+#endif  /* S_ISFIFO */
+#ifdef S_ISLNK
+    else if (S_ISLNK(mode))
+        c = 'l';
+#endif  /* S_ISLNK */
+#ifdef S_ISSOCK
+    else if (S_ISSOCK(mode))
+        c = 's';
+#endif  /* S_ISSOCK */
+#ifdef S_ISDOOR
+    /* Solaris 2.6, etc. */
+    else if (S_ISDOOR(mode))
+        c = 'D';
+#endif  /* S_ISDOOR */
+    else
+    {
+        c = '-';
+    }
+    return(c);
+}
+
+int check_file(char *pathname, char *filename){
+	if(!strcmp(filename,".") || !strcmp(filename,".."))
+		return 0;
+	if(opts){
+		struct stat st;
+		lstat(pathname, &st); 
+		if(mdisplay>0){
+
+		} else if(mdisplay<0) {
+
+		}
+		if((udisplay>=0) && (udisplay!=st.st_uid))
+			return 0;
+	}
+	return 1;
+}
+
+void print_info(char *pathname){
 		struct stat st;
 		struct passwd *pwd;
 		struct group *grp;
 		struct tm *time;
-/*		char *months[12] = ["Jan",  "Feb",  "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];*/
 		char time_buf[17];
-		
-		stat(pathname, &st);
+
+		lstat(pathname, &st);
 
 		pwd = getpwuid(st.st_uid);
 		grp = getgrgid(st.st_gid);
-		time = localtime(st.st_mtime);
-		strftime(time_buf, 17, "%b %d %Y %H:%M", time);
-/*		month = months[time->tm_mon];*/
+		time_t t = st.st_mtime;
+		time = localtime(&t);
+		strftime(time_buf, 18, "%b %d %Y %H:%M", time);
+		
+		char mode[11];
+		static char *rwx[] = {"---", "--x", "-w-", "-wx","r--", "r-x", "rw-", "rwx"};
+		mode[0] = filetypeletter(st.st_mode);
+		strcpy(&mode[1], rwx[(st.st_mode >> 6)& 7]);
+		strcpy(&mode[4], rwx[(st.st_mode >> 3)& 7]);
+		strcpy(&mode[7], rwx[(st.st_mode & 7)]);
+		mode[10] = '\0';
 
-
-		printf("%hd/%lu ", st.st_dev,de->d_ino);
-		printf("%hu %hd ", st.st_mode, st.st_nlink);
-		printf("%s %s ", pwd->pw_name, grp->gr_name);
-		printf("%ld ",st.st_size);
-		printf("%s", time_buf);
+		if(S_ISLNK(st.st_mode)){
+			char target[1024];
+			int length = readlink(pathname, target, 1024);
+			if(length<0){
+				fprintf(stderr, "uhoh %s", strerror(errno));
+				exit(-1);
+			}
+			target[length] = '\0';
+			strcat(pathname, " -> ");
+			strcat(pathname, realpath(target, NULL));
+		}
+		
+		printf("%hd/%lu ", st.st_dev,st.st_ino);
+		printf("%s %hd ", mode, st.st_nlink);
+		printf("%s %s\t", pwd->pw_name, grp->gr_name);
+		printf("%ld\t",st.st_size);
+		printf("%s ", time_buf);
 		printf("%s\n", pathname);
+
 }
 
 void directory(char *direct){
 	DIR *dirp;
 	struct dirent *de;
 
-	if(!(dirp = opendir(direct))){
-		printf("Can not open directory %s:%s\\n", direct, strerror(errno));
+	if((dirp = opendir(direct))==NULL){
+		printf("Can not open directory %s:%s\n", direct, strerror(errno));
 		return;
 	}
+
 	while(de = readdir(dirp)){
-		if(strcmp(de->d_name,".") && strcmp(de->d_name,"..")){
-		strcat(direct, "/");
-		strcat(direct, de->d_name);
-		if(de->d_type == DT_DIR){
-			directory(direct);
-		} else {
-			file_read(de, direct);
-		}
+		char pathname[1024];
+		strcpy(pathname, direct);
+		strcat(pathname, "/");
+		strcat(pathname, de->d_name);
+		
+		if(check_file(pathname, de->d_name)){
+			print_info(pathname);
+			
+			if(de->d_type == DT_DIR){
+				directory(pathname);
+			}	
 		}
 	}
-	closedir(dirp);
+
+	if(closedir(dirp)<0){
+		fprintf(stderr, "%s\n", strerror(errno));
+		exit(-1);
+	}
 }
 
 int main(int argc, char **argv){
-	directory(argv[argc-1]);
+	struct passwd *pwd;
+	int c = 0;
+	while ((c = getopt (argc, argv, "u:m:")) != -1){
+		opts = 1;
+		switch (c){
+			case 'u':
+				if((udisplay = atoi(optarg)) == 0){
+					pwd = getpwnam(optarg);
+					udisplay = pwd->pw_uid;
+				}		
+				break;
+			case 'm':
+				mdisplay = atoi(optarg);
+				break;
+		}
+	}
+	directory(realpath(argv[argc-1], NULL));
 	return 0;
-
 }
+

@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <pwd.h>
@@ -11,56 +10,48 @@
 #include <time.h>
 #include <unistd.h>
 #include <limits.h>
-#include <time.h>
 
 int opts;
+time_t tnow;
 int mdisplay=0;
 int udisplay=-1;
 
 static char filetypeletter(int mode)
 {
     char    c;
-    if (S_ISREG(mode))
-        c = '-';
-    else if (S_ISDIR(mode))
-        c = 'd';
-    else if (S_ISBLK(mode))
-        c = 'b';
-    else if (S_ISCHR(mode))
-        c = 'c';
+    if (S_ISREG(mode)) c = '-';
+    else if (S_ISDIR(mode)) c = 'd';
+    else if (S_ISBLK(mode)) c = 'b';
+    else if (S_ISCHR(mode)) c = 'c';
 #ifdef S_ISFIFO
-    else if (S_ISFIFO(mode))
-        c = 'p';
+    else if (S_ISFIFO(mode)) c = 'p';
 #endif  /* S_ISFIFO */
 #ifdef S_ISLNK
-    else if (S_ISLNK(mode))
-        c = 'l';
+    else if (S_ISLNK(mode)) c = 'l';
 #endif  /* S_ISLNK */
 #ifdef S_ISSOCK
-    else if (S_ISSOCK(mode))
-        c = 's';
+    else if (S_ISSOCK(mode)) c = 's';
 #endif  /* S_ISSOCK */
 #ifdef S_ISDOOR
     /* Solaris 2.6, etc. */
-    else if (S_ISDOOR(mode))
-        c = 'D';
+    else if (S_ISDOOR(mode)) c = 'D';
 #endif  /* S_ISDOOR */
     else
-    {
         c = '-';
-    }
+    
     return(c);
 }
 
 int check_file(char *pathname){
-	if(opts){
+	if(opts){ /*opts is set if there are options, in order to save an unnecessary lstat system call */
 		struct stat st;
-		lstat(pathname, &st); 
+		if(stat(pathname, &st)<0){
+			fprintf(stderr, "Error getting information on file %s: %s\n", pathname, strerror(errno));
+			exit(-1);
+		}
 		if((udisplay>=0) && (udisplay!=st.st_uid))
 			return 0;
 		if(mdisplay){
-			time_t tnow;
-			time(&tnow);
 			double seconds = difftime(tnow, st.st_mtime);
 			return mdisplay>0?(mdisplay<seconds):(mdisplay+seconds<0);
 		}
@@ -75,7 +66,10 @@ void print_info(char *pathname){
 		struct tm *time;
 		char time_buf[17];
 
-		lstat(pathname, &st);
+		if(lstat(pathname, &st)<0){
+			fprintf(stderr, "Error getting information on file %s: %s\n", pathname, strerror(errno));
+			exit(-1);
+		}
 
 		pwd = getpwuid(st.st_uid);
 		grp = getgrgid(st.st_gid);
@@ -84,23 +78,30 @@ void print_info(char *pathname){
 		strftime(time_buf, 18, "%b %d %Y %H:%M", time);
 		
 		char mode[11];
+		/* The following code was mostly taken from http://stackoverflow.com/questions/10323060/ */
 		static char *rwx[] = {"---", "--x", "-w-", "-wx","r--", "r-x", "rw-", "rwx"};
 		mode[0] = filetypeletter(st.st_mode);
 		strcpy(&mode[1], rwx[(st.st_mode >> 6)& 7]);
 		strcpy(&mode[4], rwx[(st.st_mode >> 3)& 7]);
 		strcpy(&mode[7], rwx[(st.st_mode & 7)]);
+		if (st.st_mode & S_ISUID)
+			mode[3] = (st.st_mode & 0100) ? 's' : 'S';
+		if (st.st_mode & S_ISGID)
+			mode[6] = (st.st_mode & 0010) ? 's' : 'l';
+		if (st.st_mode & S_ISVTX)
+			mode[9] = (st.st_mode & 0100) ? 't' : 'T';
 		mode[10] = '\0';
 
 		if(S_ISLNK(st.st_mode)){
 			char target[1024];
 			int length = readlink(pathname, target, 1024);
 			if(length<0){
-				fprintf(stderr, "uhoh %s", strerror(errno));
+				fprintf(stderr, "Error following symbolic link of file %s: %s\n", pathname, strerror(errno));
 				exit(-1);
 			}
 			target[length] = '\0';
 			strcat(pathname, " -> ");
-			strcat(pathname, realpath(target, NULL));
+			strcat(pathname, target);
 		}
 		
 		printf("%hd/%lu ", st.st_dev,st.st_ino);
@@ -117,27 +118,32 @@ void directory(char *direct){
 	struct dirent *de;
 
 	if((dirp = opendir(direct))==NULL){
-		printf("Can not open directory %s:%s\n", direct, strerror(errno));
-		return;
+		fprintf(stderr,"Error opening directory %s: %s\n", direct, strerror(errno));
+		exit(-1);
 	}
-
-	while(de = readdir(dirp)){
-		char pathname[1024];
-		strcpy(pathname, direct);
-		strcat(pathname, "/");
-		strcat(pathname, de->d_name);
-		
-		/* I couldn't include this in check_file, since even if check_file returns 0, we still need to further check that directory... */
+	while((de = readdir(dirp))!=NULL){
+		/* I couldn't include this in check_file, since even when check_file returns 0, we still need to further search that directory, as opposed to this check. */
 		if(strcmp(de->d_name,".") && strcmp(de->d_name,"..")){
+		/*	char *pathname = malloc(strlen(direct) + strlen(de->d_name) + 2);*/
+		char pathname[1024];
+			if(pathname==NULL){
+				fprintf(stderr, "Error Allocating Memory. Please try again. %s\n", strerror(errno));
+				exit(-1);
+			}
+			strcpy(pathname, direct);
+			strcat(pathname, "/");
+			strcat(pathname, de->d_name);
+			
 			if(check_file(pathname))
 				print_info(pathname);			
 			if(de->d_type == DT_DIR)
 				directory(pathname);
 		}
+		/* free(pathname) */
 	}
 
 	if(closedir(dirp)<0){
-		fprintf(stderr, "%s\n", strerror(errno));
+		fprintf(stderr, "Error Closing Directory %s: %s\n", direct, strerror(errno));
 		exit(-1);
 	}
 }
@@ -149,17 +155,27 @@ int main(int argc, char **argv){
 		opts = 1;
 		switch (c){
 			case 'u':
-				if((udisplay = atoi(optarg)) == 0){
-					pwd = getpwnam(optarg);
+				if(((udisplay = strtol(optarg, NULL, 0))==0) /* if its not a digit */){
+					/* String to Int conversion failed because String is not an int */ 
+					if((pwd = getpwnam(optarg))==NULL){
+						fprintf(stderr, "Error Retrieving User with Username %s\n", optarg);
+						exit(-1);
+					}
+					
 					udisplay = pwd->pw_uid;
 				}		
 				break;
 			case 'm':
+				 /* tnow is a global variable, in order that the mtime comparison is done with the time at original execution, 
+				as opposed to the time at each readdir*/
+				time(&tnow);
 				mdisplay = atoi(optarg);
+				/* If atoi fails, and returns 0, this is okay. There is no difference between mdisplay=0 and no mdisplay declared */
 				break;
 		}
 	}
-	directory(realpath(argv[argc-1], NULL));
+	directory(argv[argc-1]);
+	/* getopt will sort the arguments. Directory will thus be the last entry. If this fails, the error will be found in the directory function */
 	return 0;
 }
 

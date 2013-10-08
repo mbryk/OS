@@ -15,6 +15,8 @@ int opts;
 time_t tnow;
 int mdisplay=0;
 int udisplay=-1;
+dev_t vol_start=0;
+char *target_link=NULL;
 
 static char filetypeletter(int mode)
 {
@@ -45,9 +47,26 @@ static char filetypeletter(int mode)
 int check_file(char *pathname){
 	if(opts){ /*opts is set if there are options, in order to save an unnecessary lstat system call */
 		struct stat st;
-		if(stat(pathname, &st)<0){
+		if(lstat(pathname, &st)<0){
 			fprintf(stderr, "Error getting information on file %s: %s\n", pathname, strerror(errno));
 			exit(-1);
+		} 
+		if(vol_start){
+			if(st.st_dev != vol_start){
+				fprintf(stderr, "note: not crossing mount point at %s", vol_start);
+				return 2;
+			}
+		}
+		if(target_link!=NULL){
+			if(!S_ISLNK(st.st_mode)) return 0;
+			char target[1024];
+			int length = readlink(pathname, target, 1024);
+			if(length<0){
+				fprintf(stderr, "Error following symbolic link of file %s: %s\n", pathname, strerror(errno));
+				exit(-1);
+			}
+			target[length] = '\0';
+			return !strcmp(realpath(target,NULL), target_link);
 		}
 		if((udisplay>=0) && (udisplay!=st.st_uid))
 			return 0;
@@ -105,7 +124,7 @@ void print_info(char *pathname){
 		}
 		
 		printf("%hd/%lu ", st.st_dev,st.st_ino);
-		printf("%s %hd ", mode, st.st_nlink);
+		printf("%s %hd ", mode, st.st_nlink); /* this is the number of HARD links */
 		printf("%s %s\t", pwd->pw_name, grp->gr_name);
 		printf("%ld\t",st.st_size);
 		printf("%s ", time_buf);
@@ -116,16 +135,17 @@ void print_info(char *pathname){
 void directory(char *direct){
 	DIR *dirp;
 	struct dirent *de;
+	int i;
 
 	if((dirp = opendir(direct))==NULL){
 		fprintf(stderr,"Error opening directory %s: %s\n", direct, strerror(errno));
 		exit(-1);
 	}
 	while((de = readdir(dirp))!=NULL){
-		/* I couldn't include this in check_file, since even when check_file returns 0, we still need to further search that directory, as opposed to this check. */
+		/* I couldn't include this in check_file, since even when check_file returns 0,
+		 we still need to further search that directory, as opposed to this check for "." and "..". */
 		if(strcmp(de->d_name,".") && strcmp(de->d_name,"..")){
-		/*	char *pathname = malloc(strlen(direct) + strlen(de->d_name) + 2);*/
-		char pathname[1024];
+			char pathname[1024]; /* No robustness issues, so no dynamic mem used. */
 			if(pathname==NULL){
 				fprintf(stderr, "Error Allocating Memory. Please try again. %s\n", strerror(errno));
 				exit(-1);
@@ -134,12 +154,13 @@ void directory(char *direct){
 			strcat(pathname, "/");
 			strcat(pathname, de->d_name);
 			
-			if(check_file(pathname))
-				print_info(pathname);			
-			if(de->d_type == DT_DIR)
+			if(i = check_file(pathname) == 1){
+				print_info(pathname);
+			}			
+			/* If device number was different, stop stepping through the directory */
+			if(de->d_type==DT_DIR && i!=2)
 				directory(pathname);
 		}
-		/* free(pathname) */
 	}
 
 	if(closedir(dirp)<0){
@@ -150,8 +171,9 @@ void directory(char *direct){
 
 int main(int argc, char **argv){
 	struct passwd *pwd;
+	struct stat st; /* In case of -x, since a declaration is not allowed as part of a label apparently */
 	int c = 0;
-	while ((c = getopt (argc, argv, "u:m:")) != -1){
+	while ((c = getopt (argc, argv, "u:m:xl:")) != -1){
 		opts = 1;
 		switch (c){
 			case 'u':
@@ -171,6 +193,16 @@ int main(int argc, char **argv){
 				time(&tnow);
 				mdisplay = atoi(optarg);
 				/* If atoi fails, and returns 0, this is okay. There is no difference between mdisplay=0 and no mdisplay declared */
+				break;
+			case 'x':
+				if(stat(argv[argc-1], &st)<0){
+					fprintf(stderr, "Error getting information on file %s: %s\n", argv[argc-1], strerror(errno));
+					exit(-1);
+				}
+				vol_start = st.st_dev;
+				break;
+			case 'l':
+				target_link = realpath(optarg, NULL);
 				break;
 		}
 	}

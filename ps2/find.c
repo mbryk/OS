@@ -38,13 +38,15 @@ static char filetypeletter(int mode)
     /* Solaris 2.6, etc. */
     else if (S_ISDOOR(mode)) c = 'D';
 #endif  /* S_ISDOOR */
-    else
-        c = '-';
-    
+    else	c = '-';
     return(c);
 }
 
-int check_file(char *pathname){
+int check_file(char *pathname, char *filename){
+	/* This function returns a 0 if the file is OK to print. Returns a 1 if it is not OK to print.
+	Returns a 2 if it should not be stepped into, if it's a directory (a ".","..", or new volume). */
+	
+	if(!(strcmp(filename,".") && strcmp(filename,".."))) return 2;
 	if(opts){ /*opts is set if there are options, in order to save an unnecessary lstat system call */
 		struct stat st;
 		if(lstat(pathname, &st)<0){
@@ -53,12 +55,12 @@ int check_file(char *pathname){
 		} 
 		if(vol_start){
 			if(st.st_dev != vol_start){
-				fprintf(stderr, "note: not crossing mount point at %s", vol_start);
+				fprintf(stderr, "note: not crossing mount point at %s\n", pathname);
 				return 2;
 			}
 		}
 		if(target_link!=NULL){
-			if(!S_ISLNK(st.st_mode)) return 0;
+			if(!S_ISLNK(st.st_mode)) return 1;
 			char target[1024];
 			int length = readlink(pathname, target, 1024);
 			if(length<0){
@@ -66,16 +68,16 @@ int check_file(char *pathname){
 				exit(-1);
 			}
 			target[length] = '\0';
-			return !strcmp(realpath(target,NULL), target_link);
+			if(strcmp(realpath(target,NULL), target_link)) return 1;
 		}
 		if((udisplay>=0) && (udisplay!=st.st_uid))
-			return 0;
+			return 1;
 		if(mdisplay){
 			double seconds = difftime(tnow, st.st_mtime);
-			return mdisplay>0?(mdisplay<seconds):(mdisplay+seconds<0);
+			return mdisplay>0?(mdisplay>seconds):(mdisplay+seconds>0);
 		}
 	}
-	return 1;
+	return 0;
 }
 
 void print_info(char *pathname){
@@ -119,6 +121,7 @@ void print_info(char *pathname){
 				exit(-1);
 			}
 			target[length] = '\0';
+			pathname = realloc(pathname,strlen(pathname)+length+5);
 			strcat(pathname, " -> ");
 			strcat(pathname, target);
 		}
@@ -142,25 +145,22 @@ void directory(char *direct){
 		exit(-1);
 	}
 	while((de = readdir(dirp))!=NULL){
-		/* I couldn't include this in check_file, since even when check_file returns 0,
-		 we still need to further search that directory, as opposed to this check for "." and "..". */
-		if(strcmp(de->d_name,".") && strcmp(de->d_name,"..")){
-			char pathname[1024]; /* No robustness issues, so no dynamic mem used. */
-			if(pathname==NULL){
-				fprintf(stderr, "Error Allocating Memory. Please try again. %s\n", strerror(errno));
-				exit(-1);
-			}
-			strcpy(pathname, direct);
-			strcat(pathname, "/");
-			strcat(pathname, de->d_name);
-			
-			if(i = check_file(pathname) == 1){
-				print_info(pathname);
-			}			
-			/* If device number was different, stop stepping through the directory */
-			if(de->d_type==DT_DIR && i!=2)
-				directory(pathname);
+		/*	char pathname[1024]; No robustness issues, so no dynamic mem used. */
+		char *pathname = malloc(strlen(direct)+strlen(de->d_name)+2);
+		if(pathname==NULL){
+			fprintf(stderr, "Error Allocating Memory. Please try again. %s\n", strerror(errno));
+			exit(-1);
 		}
+		strcpy(pathname, direct);
+		strcat(pathname, "/");
+		strcat(pathname, de->d_name);
+		
+		if(!(i=check_file(pathname, de->d_name))){
+			print_info(pathname);
+		}			
+		/* If device number was different or it is ".","..", stop stepping through the directory */
+		if(de->d_type==DT_DIR && i!=2)
+			directory(pathname);
 	}
 
 	if(closedir(dirp)<0){
@@ -203,6 +203,10 @@ int main(int argc, char **argv){
 				break;
 			case 'l':
 				target_link = realpath(optarg, NULL);
+				if(target_link==NULL){
+					fprintf(stderr, "Error: Target link %s does not exist: %s\n", optarg, strerror(errno));
+					exit(-1);
+				}
 				break;
 		}
 	}

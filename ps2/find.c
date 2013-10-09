@@ -145,7 +145,6 @@ void directory(char *direct){
 		exit(-1);
 	}
 	while((de = readdir(dirp))!=NULL){
-		/*	char pathname[1024]; No robustness issues, so no dynamic mem used. */
 		char *pathname = malloc(strlen(direct)+strlen(de->d_name)+2);
 		if(pathname==NULL){
 			fprintf(stderr, "Error Allocating Memory. Please try again. %s\n", strerror(errno));

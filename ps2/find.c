@@ -1,3 +1,4 @@
+/* Mark Bryk, ECE357, Problem Set 2 */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>

@@ -1,3 +1,4 @@
+/* Mark Bryk, ECE357, Problem Set 2 */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -43,8 +44,7 @@ static char filetypeletter(int mode)
 }
 
 int check_file(char *pathname, char *filename){
-	/* This function returns a 0 if the file is OK to print. Returns a 1 if it is not OK to print.
-	Returns a 2 if it should not be stepped into, if it's a directory (a ".","..", or new volume). */
+	/* This function returns a 0 if the file is OK to print. Returns a 1 if it is not OK to print. Returns a 2 if it should not be stepped into, if it's a directory (a ".","..", or new volume). */
 	
 	if(!(strcmp(filename,".") && strcmp(filename,".."))) return 2;
 	if(opts){ /*opts is set if there are options, in order to save an unnecessary lstat system call */
@@ -85,7 +85,7 @@ void print_info(char *pathname){
 		struct passwd *pwd;
 		struct group *grp;
 		struct tm *time;
-		char time_buf[17];
+		char time_buf[18];
 
 		if(lstat(pathname, &st)<0){
 			fprintf(stderr, "Error getting information on file %s: %s\n", pathname, strerror(errno));
@@ -127,7 +127,7 @@ void print_info(char *pathname){
 		}
 		
 		printf("%hd/%lu ", st.st_dev,st.st_ino);
-		printf("%s %hd ", mode, st.st_nlink); /* this is the number of HARD links */
+		printf("%s %hd ", mode, st.st_nlink); /* # of HARD links */
 		printf("%s %s\t", pwd->pw_name, grp->gr_name);
 		printf("%ld\t",st.st_size);
 		printf("%s ", time_buf);
@@ -187,8 +187,7 @@ int main(int argc, char **argv){
 				}		
 				break;
 			case 'm':
-				 /* tnow is a global variable, in order that the mtime comparison is done with the time at original execution, 
-				as opposed to the time at each readdir*/
+				 /* tnow is a global variable, in order that the mtime comparison is done with the time at original execution, as opposed to the time at each readdir*/
 				time(&tnow);
 				mdisplay = atoi(optarg);
 				/* If atoi fails, and returns 0, this is okay. There is no difference between mdisplay=0 and no mdisplay declared */

@@ -9,8 +9,8 @@
 #include <errno.h>
 
 void redirection(char *file, int redir, int flags){
-	close(redir);
 	int fd = open(file, flags, 0666);
+	close(redir);
 	dup2(fd, redir);
 	close(fd);
 }

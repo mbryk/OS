@@ -10,50 +10,59 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 
 void redirection(char *file, int redir, int flags){
 	int fd = open(file, flags, 0666);
 	if(fd==-1){
-		fprintf(stderr, "Error Opening File %s for redirection: %s", file, strerror(errno));
+		fprintf(stderr, "Error- Opening File %s for redirection to fd %d: %s", file, redir, strerror(errno));
 		exit(-1);
 	}
-	close(redir);
-	dup2(fd, redir);
+	if(dup2(fd, redir)==-1){
+		fprintf(stderr, "Error- Copying File %s to new fd %d: %s", file, redir, strerror(errno));
+		exit(-1);
+	}
 	close(fd);
 }
 
 int main(int argc, char **argv){
 	int n, pid, status, i, j;
-	int fd_in, dup_in, dup_out, dup_err, flags_out, flags_err;
+	int arg_in, dup_in, dup_out, dup_err, flags_out, flags_err;
 	double rseconds;
-	char *file_in, *file_out, *file_err, *arg;
+	char *file_in, *file_out, *file_err, *arg, *buf;
 	struct rusage ru;
 	struct timeval begin, end;
-
-	int b_size = 4096; int arg_size = 100;
-	char *buf = malloc(b_size); char **args = malloc(arg_size);
-	if((buf==NULL)||(args==NULL)){
-		fprintf(stderr, "Error Allocating Memory: %s\n", strerror(errno));
+	FILE *file;
+	size_t len = 0;
+	int arg_size = 5;
+	char **args = malloc(arg_size);
+	if(args==NULL){
+		fprintf(stderr, "Error- Allocating Memory: %s\n", strerror(errno));
 		exit(-1);
 	}
-
-	if(argc>1){
-		if((fd_in=open(argv[1], O_RDONLY, 0666))==-1){
-			fprintf(stderr, "Error opening Input File %s for shell to interpret: %s\n", argv[1], strerror(errno));
-			exit(-1);
-		}
-	} else fd_in = 0;
+	switch(argc){
+		case 1: file = stdin; break;
+		case 2:
+			arg_in = 1; /* In order to close it later */ 
+			/* r=read-only, e=Close on exec. This way, there are no possible open fd's when forking so I don't need to loop through all possible fd's */
+			if((file = fopen(argv[1], "re"))==NULL){
+				fprintf(stderr, "Error- Opening file %s for shell interpreting: %s", argv[1], strerror(errno));
+				exit(-1);
+			}
+			break;
+		default:
+			fprintf(stderr, "Error- # of command line arguments cannot exceed 1");
+			break;
+	}
 
 	while(1){
 		dup_in = 0; dup_out = 0; dup_err = 0;
 		fprintf(stderr, "--->");
-		if((n=read(fd_in, buf, b_size))==-1){
-			fprintf(stderr, "Error - Reading from Shell failed: %s\n", strerror(errno));
-			exit(-1);
-		} else if(n==0) {
+		if((n=getline(&buf, &len, file))==-1){
 			fprintf(stderr,"End of File\n");break;
 		}
-		buf[n-1] = '\0'; /* To get rid of new line */
+		if(buf[n-1]=='\n')
+			buf[n-1] = '\0';
 		
 		arg = strtok(buf, " ");
 		if(arg==NULL||arg[0]=='#')
@@ -90,9 +99,10 @@ int main(int argc, char **argv){
 					break;
 				default:
 					if(i==arg_size){
-						args = realloc(args, arg_size*10);
+						arg_size *=5;
+						args = realloc(args, arg_size);
 						if(buf==NULL){
-							fprintf(stderr, "Error Reallocating Memory: %s\n", strerror(errno));
+							fprintf(stderr, "Error- Reallocating Memory: %s\n", strerror(errno));
 							exit(-1);
 						}
 					}
@@ -113,7 +123,7 @@ int main(int argc, char **argv){
 
 		switch(pid = fork()){
 			case -1:
-				fprintf(stderr, "Error. Fork Failed: %s\n", strerror(errno));
+				fprintf(stderr, "Error- Fork Failed: %s\n", strerror(errno));
 				exit(-1);
 				break;
 			case 0:
@@ -123,7 +133,7 @@ int main(int argc, char **argv){
 				if(dup_err) redirection(file_err, 2, flags_err);
 
 				if((n = execvp(args[0], args))==-1){
-					fprintf(stderr, "Error. Exec Failed: %s\n", strerror(errno));
+					fprintf(stderr, "Error- Exec Failed: %s\n", strerror(errno));
 					exit(-1);
 				}
 				break;
@@ -131,7 +141,7 @@ int main(int argc, char **argv){
 				/* In parent. ChildPID = pid */
 				gettimeofday(&begin, NULL);
 				if(wait3(&status, 0, &ru)==-1){
-					fprintf(stderr, "Error returning from child process %d on command %s: %s", pid, args[0], strerror(errno));
+					fprintf(stderr, "Error- Returning from child process %d on command %s: %s", pid, args[0], strerror(errno));
 					exit(-1);
 				}
 				gettimeofday(&end, NULL);
@@ -140,8 +150,12 @@ int main(int argc, char **argv){
 		rseconds = difftime(end.tv_sec, begin.tv_sec) + difftime(end.tv_usec, begin.tv_usec)/1000000;
 		/* I use both rusage and gettimeofday since real > user + system. 
 		However, I think that part of the discrepancy comes from the time to perform the gettimeofday command!	*/
-		fprintf(stderr, "\nChild [%d] returned with return code %d,\n", pid, status);
+		if(WIFSIGNALED(status))
+			fprintf(stderr, "\nChild [%d] terminated by signal %s", pid, strsignal(WTERMSIG(status)));
+		if(WIFEXITED(status))
+			fprintf(stderr, "\nChild [%d] returned with return code %d,\n", pid, WEXITSTATUS(status));
 		fprintf(stderr, "consuming %.6f real seconds, ", rseconds);
 		fprintf(stderr, "%ld.%.6d user, %ld.%.6d system\n", ru.ru_utime.tv_sec, ru.ru_utime.tv_usec, ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
 	}
+	free(args);
 }

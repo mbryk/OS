@@ -157,4 +157,5 @@ int main(int argc, char **argv){
 		fprintf(stderr, "%ld.%.6d user, %ld.%.6d system\n\n", ru.ru_utime.tv_sec, ru.ru_utime.tv_usec, ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
 	}
 	fclose(file);
+	free(args);
 }

@@ -35,29 +35,22 @@ int main(int argc, char **argv){
 	FILE *file;
 	size_t len = 0;
 	int arg_size = 5;
-	char **args = malloc(arg_size);
+	char **args = calloc(arg_size, sizeof(char*));
 	if(args==NULL){
 		fprintf(stderr, "Error- Allocating Memory: %s\n", strerror(errno));
 		exit(-1);
 	}
-	switch(argc){
-		case 1: file = stdin; break;
-		case 2:
-			arg_in = 1; /* In order to close it later */ 
-			/* r=read-only, e=Close on exec. This way, there are no possible open fd's when forking so I don't need to loop through all possible fd's */
-			if((file = fopen(argv[1], "re"))==NULL){
-				fprintf(stderr, "Error- Opening file %s for shell interpreting: %s", argv[1], strerror(errno));
-				exit(-1);
-			}
-			break;
-		default:
-			fprintf(stderr, "Error- # of command line arguments cannot exceed 1");
-			break;
-	}
+	if(argc>1){
+		/* r=read-only, e=Close on exec. This way, there are no possible open fd's when forking so I don't need to loop through all possible fd's */
+		if((file = fopen(argv[1], "re"))==NULL){
+			fprintf(stderr, "Error- Opening file %s for shell interpreting: %s", argv[1], strerror(errno));
+			exit(-1);
+		}
+	} else file = stdin;
 
 	while(1){
 		dup_in = 0; dup_out = 0; dup_err = 0;
-		fprintf(stderr, "--->");
+		//fprintf(stderr, "--->");
 		if((n=getline(&buf, &len, file))==-1){
 			fprintf(stderr,"End of File\n");break;
 		}
@@ -65,10 +58,10 @@ int main(int argc, char **argv){
 			buf[n-1] = '\0';
 		
 		arg = strtok(buf, " ");
-		if(arg==NULL||arg[0]=='#')
+		if(arg==NULL||arg[0]=='#'){
 			continue;
+		}
 		args[0] = arg;
-		
 		i=1;
 		while((arg = strtok(NULL, " ")) != NULL){
 			switch(arg[0]){
@@ -80,7 +73,7 @@ int main(int argc, char **argv){
 				case '>':
 					dup_out = 1;
 					arg++;
-					flags_out = O_CREAT | O_WRONLY | O_TRUNC; 
+					flags_out = O_CREAT | O_WRONLY | O_TRUNC;
 					if(arg[0]=='>'){
 						flags_out = O_CREAT | O_WRONLY | O_APPEND;
 						arg++;
@@ -88,20 +81,22 @@ int main(int argc, char **argv){
 					file_out = arg;
 					break;
 				case '2':
-					dup_err = 1;
-					arg = arg+2;
-					flags_err = O_CREAT | O_WRONLY | O_TRUNC; 
-					if(arg[0]=='>'){
-						flags_err = O_CREAT | O_WRONLY | O_APPEND;
-						arg++;
-					}
-					file_err = arg;					
-					break;
+					if(arg[1]=='>'){
+						dup_err = 1;
+						arg = arg+2;
+						flags_err = O_CREAT | O_WRONLY | O_TRUNC; 
+						if(arg[0]=='>'){
+							flags_err = O_CREAT | O_WRONLY | O_APPEND;
+							arg++;
+						}
+						file_err = arg;					
+						break;
+					} /* Else, it is a regular argument and will fall into default */
 				default:
 					if(i==arg_size){
 						arg_size *=5;
-						args = realloc(args, arg_size);
-						if(buf==NULL){
+						args = realloc(args, arg_size*sizeof(char*));
+						if(args==NULL){
 							fprintf(stderr, "Error- Reallocating Memory: %s\n", strerror(errno));
 							exit(-1);
 						}
@@ -116,9 +111,8 @@ int main(int argc, char **argv){
 		fprintf(stderr, "Executing command %s", args[0]);
 		if(i!=1)
 			fprintf(stderr, " with arguments ");
-		for(j=1;args[j]!=NULL;j++){
+		for(j=1;args[j]!=NULL;j++)
 			fprintf(stderr, "\"%s\" ", args[j]);
-		}
 		fprintf(stderr, "\n");
 
 		switch(pid = fork()){
@@ -131,7 +125,6 @@ int main(int argc, char **argv){
 				if(dup_in) redirection(file_in, 0, O_RDONLY);
 				if(dup_out) redirection(file_out, 1, flags_out);
 				if(dup_err) redirection(file_err, 2, flags_err);
-
 				if((n = execvp(args[0], args))==-1){
 					fprintf(stderr, "Error- Exec Failed: %s\n", strerror(errno));
 					exit(-1);
@@ -139,23 +132,29 @@ int main(int argc, char **argv){
 				break;
 			default:
 				/* In parent. ChildPID = pid */
-				gettimeofday(&begin, NULL);
+				if(gettimeofday(&begin, NULL)==-1){
+					fprintf(stderr, "Error- Recording time of child process %d on command %s: %s", pid, args[0], strerror(errno));
+					exit(-1);
+				};
 				if(wait3(&status, 0, &ru)==-1){
 					fprintf(stderr, "Error- Returning from child process %d on command %s: %s", pid, args[0], strerror(errno));
 					exit(-1);
 				}
-				gettimeofday(&end, NULL);
+				if(gettimeofday(&end, NULL)==-1){
+					fprintf(stderr, "Error- Recording time of child process %d on command %s: %s", pid, args[0], strerror(errno));
+					exit(-1);
+				};
 				break;
 		}
 		rseconds = difftime(end.tv_sec, begin.tv_sec) + difftime(end.tv_usec, begin.tv_usec)/1000000;
 		/* I use both rusage and gettimeofday since real > user + system. 
 		However, I think that part of the discrepancy comes from the time to perform the gettimeofday command!	*/
 		if(WIFSIGNALED(status))
-			fprintf(stderr, "\nChild [%d] terminated by signal %s", pid, strsignal(WTERMSIG(status)));
+			fprintf(stderr, "Child [%d] terminated by signal %s", pid, strsignal(WTERMSIG(status)));
 		if(WIFEXITED(status))
-			fprintf(stderr, "\nChild [%d] returned with return code %d,\n", pid, WEXITSTATUS(status));
+			fprintf(stderr, "Child [%d] returned with return code %d,\n", pid, WEXITSTATUS(status));
 		fprintf(stderr, "consuming %.6f real seconds, ", rseconds);
-		fprintf(stderr, "%ld.%.6d user, %ld.%.6d system\n", ru.ru_utime.tv_sec, ru.ru_utime.tv_usec, ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
+		fprintf(stderr, "%ld.%.6d user, %ld.%.6d system\n\n", ru.ru_utime.tv_sec, ru.ru_utime.tv_usec, ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
 	}
-	free(args);
+	fclose(file);
 }

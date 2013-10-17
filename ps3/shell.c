@@ -50,7 +50,6 @@ int main(int argc, char **argv){
 
 	while(1){
 		dup_in = 0; dup_out = 0; dup_err = 0;
-		//fprintf(stderr, "--->");
 		if((n=getline(&buf, &len, file))==-1){
 			fprintf(stderr,"End of File\n");break;
 		}

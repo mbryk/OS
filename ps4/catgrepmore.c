@@ -32,26 +32,43 @@ void writebuf(char *buf, int writesize){
 }
 
 int main(int argc, char **argv){
-	int fd, i, n;
+	int i;
 
-	char *buf = malloc(4096);
-	char *pattern = argv[1];
+	char *grepargs[5], *pgargs[1];
+	grepargs[0] = "grep";
+	grepargs[1] = argv[1];
+	pgargs[0] = "more";
 
+	int fds[2];
 	for(i=2;i<argc;i++){
-		if((fd = open(argv[i], O_RDONLY, 0666))==-1){
-			fprintf(stderr, "Uhoh open");
-			exit(-1);
+		pipe(fds);
+		switch(pid = fork()){
+			case -1: exit(-1);break;
+			case 0:
+				/* In Child to do grep! */
+				/* Set up Pipe */
+				grepargs[2] = argv[i];
+				grepargs[3] = NULL;
+				dup2(fds[0], 0);
+				close(fds[0]);
+				execvp("grep", grepargs);
+				break;
+			default:
+				break;
+		}
+		switch(pid2 = fork()){
+			case -1: exit(-1); break;
+			case 0:
+				/* In Child to do pipe */
+				/* Set up pipe */
+				dup2(fds[1], 1);
+				close(fds[1]);
+				execvp("pg", pgargs);
+				break;
+			default:
+				break;
 		}
 
-		while((n = readbuf(in_fd, buf, b_size))>0){
-			writebuf(buf, n);
-		}
-
-		if(close(in_fd)==-1){
-			fprintf(stderr, "Uhoh");
-			exit(-1);
-		}
 	}
-	free(buf);
 	return 0;
 }

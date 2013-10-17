@@ -57,9 +57,8 @@ int main(int argc, char **argv){
 			buf[n-1] = '\0';
 		
 		arg = strtok(buf, " ");
-		if(arg==NULL||arg[0]=='#'){
+		if(arg==NULL||arg[0]=='#')
 			continue;
-		}
 		args[0] = arg;
 		i=1;
 		while((arg = strtok(NULL, " ")) != NULL){
@@ -88,7 +87,7 @@ int main(int argc, char **argv){
 							flags_err = O_CREAT | O_WRONLY | O_APPEND;
 							arg++;
 						}
-						file_err = arg;					
+						file_err = arg;
 						break;
 					} /* Else, it is a regular argument and will fall into default */
 				default:
@@ -116,7 +115,7 @@ int main(int argc, char **argv){
 
 		switch(pid = fork()){
 			case -1:
-				fprintf(stderr, "Error- Fork Failed: %s\n", strerror(errno));
+				fprintf(stderr,"Error- Fork Failed: %s\n", strerror(errno));
 				exit(-1);
 				break;
 			case 0:
@@ -125,7 +124,7 @@ int main(int argc, char **argv){
 				if(dup_out) redirection(file_out, 1, flags_out);
 				if(dup_err) redirection(file_err, 2, flags_err);
 				if((n = execvp(args[0], args))==-1){
-					fprintf(stderr, "Error- Exec Failed: %s\n", strerror(errno));
+					fprintf(stderr,"Error- Exec Failed: %s\n", strerror(errno));
 					exit(-1);
 				}
 				break;

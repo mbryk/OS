@@ -50,7 +50,6 @@ int main(int argc, char **argv){
 
 	while(1){
 		dup_in = 0; dup_out = 0; dup_err = 0;
-		//fprintf(stderr, "--->");
 		if((n=getline(&buf, &len, file))==-1){
 			fprintf(stderr,"End of File\n");break;
 		}
@@ -58,9 +57,8 @@ int main(int argc, char **argv){
 			buf[n-1] = '\0';
 		
 		arg = strtok(buf, " ");
-		if(arg==NULL||arg[0]=='#'){
+		if(arg==NULL||arg[0]=='#')
 			continue;
-		}
 		args[0] = arg;
 		i=1;
 		while((arg = strtok(NULL, " ")) != NULL){

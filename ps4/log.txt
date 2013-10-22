@@ -1,0 +1,594 @@
+2904  execve("/bin/sh", ["sh", "-c", "cat test | grep asd | pg"], [/* 41 vars */]) = 0
+2904  brk(0)                            = 0xcf0000
+2904  access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+2904  mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7dd6799000
+2904  access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+2904  open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+2904  fstat(3, {st_mode=S_IFREG|0644, st_size=65697, ...}) = 0
+2904  mmap(NULL, 65697, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f7dd6788000
+2904  close(3)                          = 0
+2904  access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+2904  open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+2904  read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200\30\2\0\0\0\0\0"..., 832) = 832
+2904  fstat(3, {st_mode=S_IFREG|0755, st_size=1811160, ...}) = 0
+2904  mmap(NULL, 3925240, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7dd61ba000
+2904  mprotect(0x7f7dd636f000, 2093056, PROT_NONE) = 0
+2904  mmap(0x7f7dd656e000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b4000) = 0x7f7dd656e000
+2904  mmap(0x7f7dd6574000, 17656, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f7dd6574000
+2904  close(3)                          = 0
+2904  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7dd6787000
+2904  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7dd6786000
+2904  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7dd6785000
+2904  arch_prctl(ARCH_SET_FS, 0x7f7dd6786700) = 0
+2904  mprotect(0x7f7dd656e000, 16384, PROT_READ) = 0
+2904  mprotect(0x618000, 4096, PROT_READ) = 0
+2904  mprotect(0x7f7dd679b000, 4096, PROT_READ) = 0
+2904  munmap(0x7f7dd6788000, 65697)     = 0
+2904  getpid()                          = 2904
+2904  rt_sigaction(SIGCHLD, {0x40ecd0, ~[RTMIN RT_1], SA_RESTORER, 0x7f7dd61f04a0}, NULL, 8) = 0
+2904  geteuid()                         = 1000
+2904  brk(0)                            = 0xcf0000
+2904  brk(0xd11000)                     = 0xd11000
+2904  getppid()                         = 2903
+2904  stat("/home/mark/OS/ps4", {st_mode=S_IFDIR|0775, st_size=1024, ...}) = 0
+2904  stat(".", {st_mode=S_IFDIR|0775, st_size=1024, ...}) = 0
+2904  rt_sigaction(SIGINT, NULL, {SIG_DFL, [], 0}, 8) = 0
+2904  rt_sigaction(SIGINT, {0x40ecd0, ~[RTMIN RT_1], SA_RESTORER, 0x7f7dd61f04a0}, NULL, 8) = 0
+2904  rt_sigaction(SIGQUIT, NULL, {SIG_DFL, [], 0}, 8) = 0
+2904  rt_sigaction(SIGQUIT, {SIG_DFL, ~[RTMIN RT_1], SA_RESTORER, 0x7f7dd61f04a0}, NULL, 8) = 0
+2904  rt_sigaction(SIGTERM, NULL, {SIG_DFL, [], 0}, 8) = 0
+2904  rt_sigaction(SIGTERM, {SIG_DFL, ~[RTMIN RT_1], SA_RESTORER, 0x7f7dd61f04a0}, NULL, 8) = 0
+2904  stat("/usr/lib/lightdm/lightdm/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/local/sbin/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/local/bin/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/sbin/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/bin/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/sbin/cat", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/bin/cat", {st_mode=S_IFREG|0755, st_size=47800, ...}) = 0
+2904  pipe([3, 4])                      = 0
+2904  clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f7dd67869d0) = 2905
+2904  close(4)                          = 0
+2904  stat("/usr/lib/lightdm/lightdm/grep", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  close(3 <unfinished ...>
+2904  stat("/usr/local/sbin/grep",  <unfinished ...>
+2905  <... close resumed> )             = 0
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/local/bin/grep", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  dup2(4, 1 <unfinished ...>
+2904  stat("/usr/sbin/grep",  <unfinished ...>
+2905  <... dup2 resumed> )              = 1
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/usr/bin/grep",  <unfinished ...>
+2905  close(4 <unfinished ...>
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  <... close resumed> )             = 0
+2904  stat("/sbin/grep", 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2904  stat("/bin/grep", {st_mode=S_IFREG|0755, st_size=167296, ...}) = 0
+2905  execve("/bin/cat", ["cat", "test"], [/* 41 vars */] <unfinished ...>
+2904  pipe([4, 5])                      = 0
+2905  <... execve resumed> )            = 0
+2904  clone( <unfinished ...>
+2905  brk(0)                            = 0x1862000
+2904  <... clone resumed> child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f7dd67869d0) = 2906
+2905  access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory)
+2904  close(3 <unfinished ...>
+2905  mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  close(4 <unfinished ...>
+2905  <... mmap resumed> )              = 0x7fd4f5ef7000
+2904  <... close resumed> )             = 0
+2904  close(5 <unfinished ...>
+2906  <... close resumed> )             = 0
+2905  access("/etc/ld.so.preload", R_OK <unfinished ...>
+2904  <... close resumed> )             = 0
+2905  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  dup2(3, 0 <unfinished ...>
+2904  stat("/usr/lib/lightdm/lightdm/pg",  <unfinished ...>
+2905  open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  <... dup2 resumed> )              = 0
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  <... open resumed> )              = 3
+2906  close(3 <unfinished ...>
+2905  fstat(3,  <unfinished ...>
+2906  <... close resumed> )             = 0
+2904  stat("/usr/local/sbin/pg",  <unfinished ...>
+2906  dup2(5, 1 <unfinished ...>
+2905  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=65697, ...}) = 0
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2906  <... dup2 resumed> )              = 1
+2905  mmap(NULL, 65697, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2906  close(5 <unfinished ...>
+2904  stat("/usr/local/bin/pg",  <unfinished ...>
+2905  <... mmap resumed> )              = 0x7fd4f5ee6000
+2906  <... close resumed> )             = 0
+2905  close(3 <unfinished ...>
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  <... close resumed> )             = 0
+2905  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2906  execve("/bin/grep", ["grep", "asd"], [/* 41 vars */] <unfinished ...>
+2905  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2904  stat("/usr/sbin/pg",  <unfinished ...>
+2905  open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  <... execve resumed> )            = 0
+2905  <... open resumed> )              = 3
+2904  <... stat resumed> 0x7fffefa33f90) = -1 ENOENT (No such file or directory)
+2905  read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200\30\2\0\0\0\0\0"..., 832) = 832
+2904  stat("/usr/bin/pg",  <unfinished ...>
+2906  brk(0 <unfinished ...>
+2905  fstat(3,  <unfinished ...>
+2906  <... brk resumed> )               = 0x22a6000
+2904  <... stat resumed> {st_mode=S_IFREG|0755, st_size=31376, ...}) = 0
+2906  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2905  <... fstat resumed> {st_mode=S_IFREG|0755, st_size=1811160, ...}) = 0
+2906  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2904  clone( <unfinished ...>
+2906  mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2905  mmap(NULL, 3925240, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2906  <... mmap resumed> )              = 0x7fd8329e5000
+2905  <... mmap resumed> )              = 0x7fd4f5918000
+2905  mprotect(0x7fd4f5acd000, 2093056, PROT_NONE <unfinished ...>
+2906  access("/etc/ld.so.preload", R_OK <unfinished ...>
+2905  <... mprotect resumed> )          = 0
+2906  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2905  mmap(0x7fd4f5ccc000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b4000 <unfinished ...>
+2906  open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC <unfinished ...>
+2905  <... mmap resumed> )              = 0x7fd4f5ccc000
+2906  <... open resumed> )              = 3
+2905  mmap(0x7fd4f5cd2000, 17656, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  fstat(3,  <unfinished ...>
+2905  <... mmap resumed> )              = 0x7fd4f5cd2000
+2906  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=65697, ...}) = 0
+2905  close(3 <unfinished ...>
+2906  mmap(NULL, 65697, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2905  <... close resumed> )             = 0
+2906  <... mmap resumed> )              = 0x7fd8329d4000
+2904  <... clone resumed> child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f7dd67869d0) = 2907
+2906  close(3 <unfinished ...>
+2905  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... close resumed> )             = 0
+2905  <... mmap resumed> )              = 0x7fd4f5ee5000
+2906  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2905  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2905  <... mmap resumed> )              = 0x7fd4f5ee4000
+2907  dup2(4, 0 <unfinished ...>
+2906  open("/lib/x86_64-linux-gnu/libdl.so.2", O_RDONLY|O_CLOEXEC <unfinished ...>
+2907  <... dup2 resumed> )              = 0
+2906  <... open resumed> )              = 3
+2907  close(4 <unfinished ...>
+2906  read(3,  <unfinished ...>
+2907  <... close resumed> )             = 0
+2906  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\340\r\0\0\0\0\0\0"..., 832) = 832
+2905  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  fstat(3,  <unfinished ...>
+2905  <... mmap resumed> )              = 0x7fd4f5ee3000
+2907  execve("/usr/bin/pg", ["pg"], [/* 41 vars */] <unfinished ...>
+2906  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=14792, ...}) = 0
+2905  arch_prctl(ARCH_SET_FS, 0x7fd4f5ee4700 <unfinished ...>
+2906  mmap(NULL, 2109736, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2905  <... arch_prctl resumed> )        = 0
+2904  close(4 <unfinished ...>
+2906  <... mmap resumed> )              = 0x7fd8325c1000
+2904  <... close resumed> )             = 0
+2906  mprotect(0x7fd8325c3000, 2097152, PROT_NONE <unfinished ...>
+2904  close(4294967295 <unfinished ...>
+2906  <... mprotect resumed> )          = 0
+2904  <... close resumed> )             = -1 EBADF (Bad file descriptor)
+2906  mmap(0x7fd8327c3000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000 <unfinished ...>
+2904  wait4(-1,  <unfinished ...>
+2907  <... execve resumed> )            = 0
+2906  <... mmap resumed> )              = 0x7fd8327c3000
+2905  mprotect(0x7fd4f5ccc000, 16384, PROT_READ <unfinished ...>
+2906  close(3 <unfinished ...>
+2905  <... mprotect resumed> )          = 0
+2906  <... close resumed> )             = 0
+2907  brk(0 <unfinished ...>
+2906  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2907  <... brk resumed> )               = 0x1e8a000
+2906  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2905  mprotect(0x60a000, 4096, PROT_READ <unfinished ...>
+2906  open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC <unfinished ...>
+2905  <... mprotect resumed> )          = 0
+2906  <... open resumed> )              = 3
+2905  mprotect(0x7fd4f5ef9000, 4096, PROT_READ <unfinished ...>
+2906  read(3,  <unfinished ...>
+2905  <... mprotect resumed> )          = 0
+2906  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200\30\2\0\0\0\0\0"..., 832) = 832
+2907  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2906  fstat(3,  <unfinished ...>
+2905  munmap(0x7fd4f5ee6000, 65697 <unfinished ...>
+2906  <... fstat resumed> {st_mode=S_IFREG|0755, st_size=1811160, ...}) = 0
+2905  <... munmap resumed> )            = 0
+2906  mmap(NULL, 3925240, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  <... mmap resumed> )              = 0x7fd832202000
+2907  mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  mprotect(0x7fd8323b7000, 2093056, PROT_NONE <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4e44c000
+2906  <... mprotect resumed> )          = 0
+2907  access("/etc/ld.so.preload", R_OK <unfinished ...>
+2906  mmap(0x7fd8325b6000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b4000 <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  <... mmap resumed> )              = 0x7fd8325b6000
+2905  brk(0 <unfinished ...>
+2907  open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  mmap(0x7fd8325bc000, 17656, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  <... open resumed> )              = 3
+2905  <... brk resumed> )               = 0x1862000
+2907  fstat(3,  <unfinished ...>
+2906  <... mmap resumed> )              = 0x7fd8325bc000
+2907  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=65697, ...}) = 0
+2906  close(3 <unfinished ...>
+2907  mmap(NULL, 65697, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2906  <... close resumed> )             = 0
+2907  <... mmap resumed> )              = 0x7fca4e43b000
+2905  brk(0x1883000 <unfinished ...>
+2907  close(3 <unfinished ...>
+2906  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  <... close resumed> )             = 0
+2906  <... mmap resumed> )              = 0x7fd8329d3000
+2907  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2906  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  <... mmap resumed> )              = 0x7fd8329d2000
+2905  <... brk resumed> )               = 0x1883000
+2907  open("/lib/x86_64-linux-gnu/libtinfo.so.5", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  <... open resumed> )              = 3
+2906  <... mmap resumed> )              = 0x7fd8329d1000
+2907  read(3,  <unfinished ...>
+2906  arch_prctl(ARCH_SET_FS, 0x7fd8329d2700 <unfinished ...>
+2907  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\240\302\0\0\0\0\0\0"..., 832) = 832
+2906  <... arch_prctl resumed> )        = 0
+2907  fstat(3,  <unfinished ...>
+2905  open("/usr/lib/locale/locale-archive", O_RDONLY|O_CLOEXEC <unfinished ...>
+2907  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=163312, ...}) = 0
+2905  <... open resumed> )              = 3
+2907  mmap(NULL, 2260032, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2905  fstat(3,  <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4e004000
+2906  mprotect(0x7fd8325b6000, 16384, PROT_READ <unfinished ...>
+2907  mprotect(0x7fca4e028000, 2093056, PROT_NONE <unfinished ...>
+2906  <... mprotect resumed> )          = 0
+2907  <... mprotect resumed> )          = 0
+2905  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=1607664, ...}) = 0
+2907  mmap(0x7fca4e227000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x23000 <unfinished ...>
+2906  mprotect(0x7fd8327c3000, 4096, PROT_READ <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4e227000
+2906  <... mprotect resumed> )          = 0
+2905  mmap(NULL, 1607664, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2907  close(3 <unfinished ...>
+2906  mprotect(0x627000, 4096, PROT_READ <unfinished ...>
+2907  <... close resumed> )             = 0
+2906  <... mprotect resumed> )          = 0
+2907  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2906  mprotect(0x7fd8329e7000, 4096, PROT_READ <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  <... mprotect resumed> )          = 0
+2907  open("/lib/x86_64-linux-gnu/libncurses.so.5", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  munmap(0x7fd8329d4000, 65697 <unfinished ...>
+2907  <... open resumed> )              = 3
+2905  <... mmap resumed> )              = 0x7fd4f5d5a000
+2907  read(3,  <unfinished ...>
+2906  <... munmap resumed> )            = 0
+2907  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200Z\0\0\0\0\0\0"..., 832) = 832
+2905  close(3 <unfinished ...>
+2907  fstat(3,  <unfinished ...>
+2905  <... close resumed> )             = 0
+2907  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=133840, ...}) = 0
+2907  mmap(NULL, 2229472, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2905  fstat(1,  <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4dde3000
+2906  brk(0 <unfinished ...>
+2907  mprotect(0x7fca4de03000, 2093056, PROT_NONE <unfinished ...>
+2906  <... brk resumed> )               = 0x22a6000
+2907  <... mprotect resumed> )          = 0
+2906  brk(0x22c7000 <unfinished ...>
+2907  mmap(0x7fca4e002000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1f000 <unfinished ...>
+2906  <... brk resumed> )               = 0x22c7000
+2907  <... mmap resumed> )              = 0x7fca4e002000
+2905  <... fstat resumed> {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+2907  close(3 <unfinished ...>
+2906  open("/usr/lib/locale/locale-archive", O_RDONLY|O_CLOEXEC <unfinished ...>
+2907  <... close resumed> )             = 0
+2906  <... open resumed> )              = 3
+2907  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2906  fstat(3,  <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2906  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=1607664, ...}) = 0
+2907  open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  mmap(NULL, 1607664, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2907  <... open resumed> )              = 3
+2906  <... mmap resumed> )              = 0x7fd832848000
+2907  read(3,  <unfinished ...>
+2906  close(3 <unfinished ...>
+2907  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200\30\2\0\0\0\0\0"..., 832) = 832
+2906  <... close resumed> )             = 0
+2907  fstat(3,  <unfinished ...>
+2905  open("test", O_RDONLY <unfinished ...>
+2907  <... fstat resumed> {st_mode=S_IFREG|0755, st_size=1811160, ...}) = 0
+2906  fstat(1,  <unfinished ...>
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... fstat resumed> {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+2907  <... mmap resumed> )              = 0x7fca4e43a000
+2905  <... open resumed> )              = 3
+2907  mmap(NULL, 3925240, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2905  fstat(3,  <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4da24000
+2906  open("/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache", O_RDONLY <unfinished ...>
+2907  mprotect(0x7fca4dbd9000, 2093056, PROT_NONE <unfinished ...>
+2906  <... open resumed> )              = 3
+2907  <... mprotect resumed> )          = 0
+2906  fstat(3,  <unfinished ...>
+2907  mmap(0x7fca4ddd8000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b4000 <unfinished ...>
+2906  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=26258, ...}) = 0
+2907  <... mmap resumed> )              = 0x7fca4ddd8000
+2906  mmap(NULL, 26258, PROT_READ, MAP_SHARED, 3, 0 <unfinished ...>
+2907  mmap(0x7fca4ddde000, 17656, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... mmap resumed> )              = 0x7fd8329de000
+2907  <... mmap resumed> )              = 0x7fca4ddde000
+2906  close(3 <unfinished ...>
+2907  close(3 <unfinished ...>
+2906  <... close resumed> )             = 0
+2907  <... close resumed> )             = 0
+2905  <... fstat resumed> {st_mode=S_IFREG|0664, st_size=30, ...}) = 0
+2907  access("/etc/ld.so.nohwcap", F_OK <unfinished ...>
+2905  fadvise64(3, 0, 0, POSIX_FADV_SEQUENTIAL <unfinished ...>
+2907  <... access resumed> )            = -1 ENOENT (No such file or directory)
+2905  <... fadvise64 resumed> )         = 0
+2907  open("/lib/x86_64-linux-gnu/libdl.so.2", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS <unfinished ...>
+2907  <... open resumed> )              = 3
+2906  <... ioctl resumed> , 0x7fff151a3058) = -1 ENOTTY (Inappropriate ioctl for device)
+2907  read(3,  <unfinished ...>
+2905  read(3,  <unfinished ...>
+2907  <... read resumed> "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\340\r\0\0\0\0\0\0"..., 832) = 832
+2906  open("/usr/share/locale/locale.alias", O_RDONLY|O_CLOEXEC <unfinished ...>
+2907  fstat(3,  <unfinished ...>
+2906  <... open resumed> )              = 3
+2907  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=14792, ...}) = 0
+2906  fstat(3,  <unfinished ...>
+2907  mmap(NULL, 2109736, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0 <unfinished ...>
+2906  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=2570, ...}) = 0
+2907  <... mmap resumed> )              = 0x7fca4d820000
+2906  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  mprotect(0x7fca4d822000, 2097152, PROT_NONE <unfinished ...>
+2906  <... mmap resumed> )              = 0x7fd8329dd000
+2907  <... mprotect resumed> )          = 0
+2906  read(3,  <unfinished ...>
+2907  mmap(0x7fca4da22000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000 <unfinished ...>
+2906  <... read resumed> "# Locale name alias data base.\n#"..., 1024) = 1024
+2907  <... mmap resumed> )              = 0x7fca4da22000
+2906  read(3,  <unfinished ...>
+2907  close(3 <unfinished ...>
+2906  <... read resumed> " entries are case independent.\n\n"..., 1024) = 1024
+2907  <... close resumed> )             = 0
+2905  <... read resumed> "iasdfasdf\nasdfa\n\n\n\ncas bdcbj;\n", 32768) = 30
+2906  read(3,  <unfinished ...>
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... read resumed> "R\nko_KR\t\tko_KR.eucKR\nlithuanian "..., 1024) = 522
+2907  <... mmap resumed> )              = 0x7fca4e439000
+2906  read(3,  <unfinished ...>
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... read resumed> "", 1024)      = 0
+2907  <... mmap resumed> )              = 0x7fca4e438000
+2906  close(3 <unfinished ...>
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2906  <... close resumed> )             = 0
+2907  <... mmap resumed> )              = 0x7fca4e437000
+2906  munmap(0x7fd8329dd000, 4096 <unfinished ...>
+2907  arch_prctl(ARCH_SET_FS, 0x7fca4e438700 <unfinished ...>
+2906  <... munmap resumed> )            = 0
+2907  <... arch_prctl resumed> )        = 0
+2905  write(1, "iasdfasdf\nasdfa\n\n\n\ncas bdcbj;\n", 30) = 30
+2905  read(3,  <unfinished ...>
+2906  open("/usr/share/locale/en_US.UTF-8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2905  <... read resumed> "", 32768)     = 0
+2907  mprotect(0x7fca4ddd8000, 16384, PROT_READ <unfinished ...>
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  <... mprotect resumed> )          = 0
+2906  open("/usr/share/locale/en_US.utf8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  mprotect(0x7fca4da22000, 4096, PROT_READ <unfinished ...>
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  <... mprotect resumed> )          = 0
+2906  open("/usr/share/locale/en_US/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2905  close(3 <unfinished ...>
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  mprotect(0x7fca4e227000, 16384, PROT_READ <unfinished ...>
+2906  open("/usr/share/locale/en.UTF-8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... mprotect resumed> )          = 0
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  mprotect(0x7fca4e002000, 4096, PROT_READ <unfinished ...>
+2906  open("/usr/share/locale/en.utf8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... mprotect resumed> )          = 0
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  mprotect(0x606000, 4096, PROT_READ <unfinished ...>
+2906  open("/usr/share/locale/en/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... mprotect resumed> )          = 0
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  mprotect(0x7fca4e44e000, 4096, PROT_READ <unfinished ...>
+2906  open("/usr/share/locale-langpack/en_US.UTF-8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... mprotect resumed> )          = 0
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  munmap(0x7fca4e43b000, 65697 <unfinished ...>
+2906  open("/usr/share/locale-langpack/en_US.utf8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... munmap resumed> )            = 0
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2905  <... close resumed> )             = 0
+2906  open("/usr/share/locale-langpack/en_US/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2905  close(1 <unfinished ...>
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2905  <... close resumed> )             = 0
+2906  open("/usr/share/locale-langpack/en.UTF-8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2905  close(2 <unfinished ...>
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  brk(0 <unfinished ...>
+2906  open("/usr/share/locale-langpack/en.utf8/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... brk resumed> )               = 0x1e8a000
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2907  brk(0x1eab000 <unfinished ...>
+2906  open("/usr/share/locale-langpack/en/LC_MESSAGES/grep.mo", O_RDONLY <unfinished ...>
+2907  <... brk resumed> )               = 0x1eab000
+2906  <... open resumed> )              = -1 ENOENT (No such file or directory)
+2905  <... close resumed> )             = 0
+2907  open("/usr/lib/locale/locale-archive", O_RDONLY|O_CLOEXEC <unfinished ...>
+2906  fstat(0,  <unfinished ...>
+2907  <... open resumed> )              = 3
+2906  <... fstat resumed> {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+2907  fstat(3,  <unfinished ...>
+2906  ioctl(0, SNDCTL_TMR_TIMEBASE or TCGETS <unfinished ...>
+2907  <... fstat resumed> {st_mode=S_IFREG|0644, st_size=1607664, ...}) = 0
+2906  <... ioctl resumed> , 0x7fff151a2eb8) = -1 ENOTTY (Inappropriate ioctl for device)
+2907  mmap(NULL, 1607664, PROT_READ, MAP_PRIVATE, 3, 0 <unfinished ...>
+2906  read(0,  <unfinished ...>
+2907  <... mmap resumed> )              = 0x7fca4e2ae000
+2906  <... read resumed> "iasdfasdf\nasdfa\n\n\n\ncas bdcbj;\n", 32768) = 30
+2907  close(3 <unfinished ...>
+2906  fstat(1,  <unfinished ...>
+2907  <... close resumed> )             = 0
+2906  <... fstat resumed> {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS <unfinished ...>
+2906  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0 <unfinished ...>
+2907  <... ioctl resumed> , {B38400 opost isig icanon echo ...}) = 0
+2906  <... mmap resumed> )              = 0x7fd8329dd000
+2907  rt_sigaction(SIGINT, {0x4025b0, [], SA_RESTORER, 0x7fca4da5a4a0},  <unfinished ...>
+2906  read(0,  <unfinished ...>
+2907  <... rt_sigaction resumed> {SIG_DFL, [], 0}, 8) = 0
+2906  <... read resumed> "", 32768)     = 0
+2907  rt_sigprocmask(SIG_UNBLOCK, [INT],  <unfinished ...>
+2906  write(1, "iasdfasdf\nasdfa\n", 16 <unfinished ...>
+2907  <... rt_sigprocmask resumed> NULL, 8) = 0
+2906  <... write resumed> )             = 16
+2907  rt_sigaction(SIGQUIT, {0x4025b0, [], SA_RESTORER, 0x7fca4da5a4a0},  <unfinished ...>
+2906  close(1 <unfinished ...>
+2907  <... rt_sigaction resumed> {SIG_DFL, [], 0}, 8) = 0
+2906  <... close resumed> )             = 0
+2907  rt_sigprocmask(SIG_UNBLOCK, [QUIT],  <unfinished ...>
+2906  munmap(0x7fd8329dd000, 4096 <unfinished ...>
+2907  <... rt_sigprocmask resumed> NULL, 8) = 0
+2906  <... munmap resumed> )            = 0
+2907  rt_sigaction(SIGTERM, {0x4025b0, [], SA_RESTORER, 0x7fca4da5a4a0},  <unfinished ...>
+2906  close(2 <unfinished ...>
+2907  <... rt_sigaction resumed> {SIG_DFL, [], 0}, 8) = 0
+2906  <... close resumed> )             = 0
+2907  rt_sigprocmask(SIG_UNBLOCK, [TERM],  <unfinished ...>
+2906  exit_group(0)                     = ?
+2907  <... rt_sigprocmask resumed> NULL, 8) = 0
+2905  exit_group(0)                     = ?
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  fstat(1,  <unfinished ...>
+2904  <... wait4 resumed> [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 2906
+2907  <... fstat resumed> {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 2), ...}) = 0
+2904  --- SIGCHLD (Child exited) @ 0 (0) ---
+2907  readlink("/proc/self/fd/1",  <unfinished ...>
+2904  rt_sigreturn(0x11)                = 2906
+2907  <... readlink resumed> "/dev/pts/2", 4095) = 10
+2904  wait4(-1,  <unfinished ...>
+2907  stat("/dev/pts/2",  <unfinished ...>
+2904  <... wait4 resumed> [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 2905
+2907  <... stat resumed> {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 2), ...}) = 0
+2904  wait4(-1,  <unfinished ...>
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  open("/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache", O_RDONLY) = 3
+2907  fstat(3, {st_mode=S_IFREG|0644, st_size=26258, ...}) = 0
+2907  mmap(NULL, 26258, PROT_READ, MAP_SHARED, 3, 0) = 0x7fca4e445000
+2907  close(3)                          = 0
+2907  stat("/home/mark/.terminfo", 0x7fff8443ddd0) = -1 ENOENT (No such file or directory)
+2907  stat("/etc/terminfo", {st_mode=S_IFDIR|0755, st_size=1024, ...}) = 0
+2907  access("/etc/terminfo/x/xterm", R_OK) = -1 ENOENT (No such file or directory)
+2907  stat("/lib/terminfo", {st_mode=S_IFDIR|0755, st_size=1024, ...}) = 0
+2907  access("/lib/terminfo/x/xterm", R_OK) = 0
+2907  open("/lib/terminfo/x/xterm", O_RDONLY) = 3
+2907  fstat(3, {st_mode=S_IFREG|0644, st_size=3315, ...}) = 0
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca4e444000
+2907  read(3, "\32\1)\0&\0\17\0\235\1Z\5xterm|xterm-debian|X"..., 4096) = 3315
+2907  read(3, "", 1024)                 = 0
+2907  close(3)                          = 0
+2907  munmap(0x7fca4e444000, 4096)      = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  ioctl(1, TIOCGWINSZ, {ws_row=35, ws_col=162, ws_xpixel=0, ws_ypixel=0}) = 0
+2907  ioctl(1, TIOCGWINSZ, {ws_row=35, ws_col=162, ws_xpixel=0, ws_ypixel=0}) = 0
+2907  open("/usr/share/locale/locale.alias", O_RDONLY|O_CLOEXEC) = 3
+2907  fstat(3, {st_mode=S_IFREG|0644, st_size=2570, ...}) = 0
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca4e444000
+2907  read(3, "# Locale name alias data base.\n#"..., 1024) = 1024
+2907  read(3, " entries are case independent.\n\n"..., 1024) = 1024
+2907  read(3, "R\nko_KR\t\tko_KR.eucKR\nlithuanian "..., 1024) = 522
+2907  read(3, "", 1024)                 = 0
+2907  close(3)                          = 0
+2907  munmap(0x7fca4e444000, 4096)      = 0
+2907  open("/usr/share/locale/en_US.UTF-8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale/en_US.utf8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale/en_US/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale/en.UTF-8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale/en.utf8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale/en/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en_US.UTF-8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en_US.utf8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en_US/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en.UTF-8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en.utf8/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  open("/usr/share/locale-langpack/en/LC_MESSAGES/util-linux.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+2907  fstat(0, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca4e444000
+2907  lseek(0, 0, SEEK_SET)             = -1 ESPIPE (Illegal seek)
+2907  stat("/tmp", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=3072, ...}) = 0
+2907  getpid()                          = 2907
+2907  open("/tmp/tmpfr7Eg8q", O_RDWR|O_CREAT|O_EXCL, 0600) = 3
+2907  unlink("/tmp/tmpfr7Eg8q")         = 0
+2907  fcntl(3, F_GETFL)                 = 0x8002 (flags O_RDWR|O_LARGEFILE)
+2907  fstat(3, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca4e443000
+2907  lseek(3, 0, SEEK_CUR)             = 0
+2907  stat("/tmp", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=3072, ...}) = 0
+2907  open("/tmp/tmpfuwWkTJ", O_RDWR|O_CREAT|O_EXCL, 0600) = 4
+2907  unlink("/tmp/tmpfuwWkTJ")         = 0
+2907  fcntl(4, F_GETFL)                 = 0x8002 (flags O_RDWR|O_LARGEFILE)
+2907  fstat(4, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+2907  mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca4e442000
+2907  lseek(4, 0, SEEK_CUR)             = 0
+2907  fstat(4, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+2907  lseek(4, 0, SEEK_SET)             = 0
+2907  fstat(3, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+2907  lseek(3, 0, SEEK_SET)             = 0
+2907  read(0, "iasdfasdf\nasdfa\n", 4096) = 16
+2907  write(1, "iasdfasdf\n", 10)       = 10
+2907  write(4, "\0\0\0\0\0\0\0\0", 8)   = 8
+2907  fstat(4, {st_mode=S_IFREG|0600, st_size=8, ...}) = 0
+2907  lseek(4, 0, SEEK_SET)             = 0
+2907  read(4, "\0\0\0\0\0\0\0\0", 1024) = 8
+2907  write(3, "iasdfasdf\n", 10)       = 10
+2907  fstat(3, {st_mode=S_IFREG|0600, st_size=10, ...}) = 0
+2907  lseek(3, 0, SEEK_SET)             = 0
+2907  read(3, "iasdfasdf\n", 1024)      = 10
+2907  write(1, "asdfa\n", 6)            = 6
+2907  write(4, "\n\0\0\0\0\0\0\0", 8)   = 8
+2907  fstat(4, {st_mode=S_IFREG|0600, st_size=16, ...}) = 0
+2907  lseek(4, 0, SEEK_SET)             = 0
+2907  read(4, "\0\0\0\0\0\0\0\0\n\0\0\0\0\0\0\0", 1024) = 16
+2907  write(3, "asdfa\n", 6)            = 6
+2907  fstat(3, {st_mode=S_IFREG|0600, st_size=16, ...}) = 0
+2907  lseek(3, 0, SEEK_SET)             = 0
+2907  read(3, "iasdfasdf\nasdfa\n", 1024) = 16
+2907  read(0, "", 4096)                 = 0
+2907  write(1, "(EOF)", 5)              = 5
+2907  write(1, ":", 1)                  = 1
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_STOP or TCSETSW, {B38400 opost isig -icanon -echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig -icanon -echo ...}) = 0
+2907  ioctl(1, TCFLSH, 0)               = 0
+2907  read(1, "\n", 1)                  = 1
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig -icanon -echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_STOP or TCSETSW, {B38400 opost isig icanon echo ...}) = 0
+2907  ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+2907  write(1, "\r                               "..., 163) = 163
+2907  close(4)                          = 0
+2907  munmap(0x7fca4e442000, 4096)      = 0
+2907  close(3)                          = 0
+2907  munmap(0x7fca4e443000, 4096)      = 0
+2907  exit_group(0)                     = ?
+2904  <... wait4 resumed> [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 2907
+2904  --- SIGCHLD (Child exited) @ 0 (0) ---
+2904  rt_sigreturn(0x11)                = 2907
+2904  exit_group(0)                     = ?

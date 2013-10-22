@@ -1,0 +1,7 @@
+touch 1 2 3
+rm 1
+ls -l >file
+#comment!!!
+#comment 2
+ls none 2>>fileerr
+cat fileerr

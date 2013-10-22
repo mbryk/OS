@@ -10,11 +10,11 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-int i;
+int i, bytes;
 pid_t pid, pid2;
 
 static void int_handler(int sn){
-	fprintf(stderr, "I just got a quit!\n");
+	fprintf(stderr, "Files Processed: %d\nBytes Processed: %d\n", i-2,bytes);
 	exit(-1);
 }
 
@@ -26,6 +26,7 @@ static void pipe_handler(int sn){
 int main(int argc, char **argv){
 	int r, n, in_fd, status;
 	int b_size = 4096;
+	bytes = 0;
 	
 	struct sigaction sai, sap;
 	sai.sa_flags = SA_SIGINFO; sap.sa_flags = SA_SIGINFO;
@@ -92,8 +93,10 @@ int main(int argc, char **argv){
 		close(fds_mgrep[0]);
 		in_fd = open(argv[i], O_RDONLY, 0666);
 		char *buf_tmp;
+		int r_full;
 		while((r=read(in_fd, buf, b_size))>0){
 			buf_tmp = buf;
+			r_full = r;
 			while((n=write(fds_mgrep[1], buf_tmp, r))!=r){
 				if(n==-1){
 					fprintf(stderr, "ERROR. %s", strerror(errno));
@@ -101,6 +104,7 @@ int main(int argc, char **argv){
 				buf_tmp = buf_tmp+n;
 				r-=n; 
 			}
+			bytes += r_full;
 		}
 		if(r==-1){
 			exit(-1);

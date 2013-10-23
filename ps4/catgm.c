@@ -18,77 +18,95 @@ static void int_handler(int sn){
 }
 
 static void pipe_handler(int sn){
-	kill(pidgrep, 9);
+	if(kill(pidgrep, 9)==-1){
+		fprintf(stderr, "Error- Killing grep process #%d on exit of pager\n", pidgrep, strerror(errno));
+		exit(-1);
+	}
 }
 
 int main(int argc, char **argv){
-	int r, n, in_fd, stat1, stat2;
+	int r, r_full, n, in_fd, stat1, stat2;
 	int b_size = 4096;
+	int fds_mgrep[2], fds_gmore[2];
 	bytes = 0;
-	
-	struct sigaction sai, sap;
-	sai.sa_flags = SA_SIGINFO; sap.sa_flags = SA_SIGINFO;
-	sigemptyset(&sai.sa_mask); sigemptyset(&sap.sa_mask);
-	sai.sa_sigaction = int_handler;
-	sap.sa_sigaction = pipe_handler;
-	if(sigaction(SIGINT, &sai, NULL)==-1){
-		fprintf(stderr, "Error- Could not set signal handler\n");
-		exit(-1);
-	}
-	if(sigaction(SIGPIPE, &sap, NULL)==-1){
-		fprintf(stderr, "Error- Could not set signal handler\n");
-		exit(-1);
-	}
-
 	char *grepargs[3]= {"grep", argv[1], NULL};
 	char *moreargs[2]= {"more", NULL};
-
-	int fds_mgrep[2], fds_gmore[2];
 	char *buf = malloc(b_size);
-	if(buf==NULL){
-		fprintf(stderr, "Error Malloc");
+	char *buf_tmp; /* This pointer will point to same location as buf, so don't need to malloc it more mem */
+	if(buf==NULL || buf_tmp==NULL){
+		perror("Error- Allocating Memory");
+		exit(-1);
+	}
+	
+	if(signal(SIGINT, int_handler)==SIG_ERR || signal(SIGPIPE, pipe_handler)==SIG_ERR){
+		perror("Error- Setting Signal Handler");
 		exit(-1);
 	}
 	for(i=2;i<argc;i++){
-		pipe(fds_mgrep);
-		pipe(fds_gmore);
+		if(pipe(fds_mgrep)==-1 || pipe(fds_gmore)==-1){
+			perror("Error- Creating pipe");
+			exit(-1);
+		}
 		switch(pidmore = fork()){
-			case -1: exit(-1);break;
+			case -1:
+				perror("Error- Forking more child");
+				exit(-1);
+				break;
 			case 0:
-				/* In Child to do pg! */
-				/* Set up pipe read */
-				dup2(fds_gmore[0], 0);
-				close(fds_gmore[0]); close(fds_gmore[1]);
-				close(fds_mgrep[0]); close(fds_mgrep[1]);
-				execvp(moreargs[0],moreargs);
+				if(dup2(fds_gmore[0], 0)==-1){
+					perror("Error- Duping pipe to stdin of more child");
+					exit(-1);
+				}
+				if(close(fds_gmore[0])==-1 || close(fds_gmore[1])==-1 || close(fds_mgrep[0])==-1 || close(fds_mgrep[1])==-1){
+					perror("Error- Closing File Descriptor of Pipe");
+					exit(-1);
+				}
+				if(execvp(moreargs[0],moreargs)==-1){
+					perror("Error- Executing more process");
+					exit(-1);
+				}
 				break;
 			default:
 				break;
 		}
 		switch(pidgrep = fork()){
-			case -1: exit(-1); break;
+			case -1:
+				perror("Error- Forking grep child");
+				exit(-1);
+				break;
 			case 0:
-				if(sigaction(SIGPIPE, &sap, NULL)==-1){
-					fprintf(stderr, "Error- Could not set signal handler\n");
+				if(signal(SIGPIPE, pipe_handler)==SIG_ERR){
+					perror("Error- Setting Signal Handler");
 					exit(-1);
 				}
-				/* In Child to do grep! */
-				/* Set up Pipe Read From Main and Pipe Write */
-				dup2(fds_mgrep[0], 0);
-				dup2(fds_gmore[1], 1);
-				close(fds_gmore[0]); close(fds_gmore[1]);
-				close(fds_mgrep[0]); close(fds_mgrep[1]);
-				execvp(grepargs[0], grepargs);
+				if(dup2(fds_mgrep[0], 0)==-1 || dup2(fds_gmore[1], 1)==-1){
+					perror("Error- Duping pipe to stdin of more child");
+					exit(-1);
+				}
+				if(close(fds_gmore[0])==-1 || close(fds_gmore[1])==-1 || close(fds_mgrep[0])==-1 || close(fds_mgrep[1])==-1){
+					perror("Error- Closing File Descriptor of Pipe");
+					exit(-1);
+				}
+				if(execvp(grepargs[0],grepargs)==-1){
+					perror("Error- Executing grep process");
+					exit(-1);
+				}
 				break;
 			default:
 				break;
 		}
-		close(fds_gmore[0]); close(fds_gmore[1]);
-		close(fds_mgrep[0]);
-		in_fd = open(argv[i], O_RDONLY, 0666);
-		char *buf_tmp;
-		int r_full;
-		while((r=read(in_fd, buf, b_size))>0){
+		if(close(fds_gmore[0])==-1 || close(fds_gmore[1])==-1 || close(fds_mgrep[0])==-1){
+			perror("Error- Closing File Descriptor of Pipe");
+			exit(-1);
+		}
+		if((in_fd=open(argv[i], O_RDONLY, 0666))==-1){
+			fprintf(stderr, "Error- Opening input file %s for reading: %s\n", argv[i], strerror(errno));
+			exit(-1);
+		}
+		while((r=read(in_fd, buf, b_size))!=0){
+			if(r==-1){
+				fprintf(stderr, "Error- Reading from input file %s: %s\n", argv[i], strerror(errno));
+			}
 			buf_tmp = buf;
 			r_full = r;
 			while((n=write(fds_mgrep[1], buf_tmp, r))!=r && n!=-1){
@@ -97,16 +115,19 @@ int main(int argc, char **argv){
 			}
 			if(n==-1) {
 				if(errno==EPIPE) break;
-				fprintf(stderr, "Error- Writing into pipe: %s", strerror(errno));
+				perror("Error- Writing into pipe");
+				exit(-1);
 			}
 			bytes += r_full;
 		}
-		if(r==-1){
+		if(close(in_fd)==-1 || close(fds_mgrep[1])==-1){
+			perror("Error- Closing File Descriptor of Pipe");
 			exit(-1);
 		}
-		close(in_fd); 
-		close(fds_mgrep[1]);
-		waitpid(pidgrep, &stat1, 0); waitpid(pidmore,&stat2, 0);
+		if(waitpid(pidgrep, &stat1, 0)==-1 || waitpid(pidmore,&stat2, 0)==-1){
+			perror("Error- Returning from child process");
+			exit(-1);
+		}
 	}
 	free(buf);
 	return 0;

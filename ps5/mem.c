@@ -9,11 +9,12 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <setjmp.h>
 
 char *filename;
 /* My Signals list is a bit different than yours. Platform specific order */
 char *signals[31] = {"SIGHUP","SIGINT","SIGQUIT","SIGILL","SIGTRAP","SIGABRT","SIGBUS","SIGFPE","SIGKILL","SIGUSR1","SIGSEGV","SIGUSR2","SIGPIPE","SIGALRM","SIGTERM","SIGSTKFLT","SIGCHLD","SIGCONT","SIGSTOP","SIGTSTP","SIGTTIN","SIGTTOU","SIGURG","SIGXCPU","SIGXFSZ","SIGVTALRM","SIGPROF","SIGWINCH","SIGIO","SIGPWR","SIGSYS"};
-void qA(); void qBC(int); void qDE(); void qF();
+void qA(); void qBC(int); void qDE(); void qF(); void EC();
 
 int main(int argc, char **argv){
 	char qc;
@@ -24,27 +25,23 @@ int main(int argc, char **argv){
 	}
 	qc = argv[1][0];
 	switch(qc){
-		case 'A':
-		case 'a':
+		case 'A': case 'a':
 			qA();
 			break;
-		case 'B':
-		case 'b':
+		case 'B': case 'b':
 			qBC(MAP_SHARED);
 			break;
-		case 'C':
-		case 'c':
+		case 'C': case 'c':
 			qBC(MAP_PRIVATE);
 			break;
-		case 'D':
-		case 'd':
-		case 'E':
-		case 'e':
+		case 'D': case 'd': case 'E': case 'e':
 			qDE();
 			break;
-		case 'F':
-		case 'f':
+		case 'F': case 'f':
 			qF();
+			break;
+		case 'G': case 'g': /* Extra Credit */
+			EC();
 			break;
 		default:
 			fprintf(stderr, "Error- Improper Input.\n");
@@ -59,7 +56,6 @@ int create_file(int size, int flags){
 	char command[100];
 	sprintf(command, "dd if=/dev/urandom of=%s bs=%d count=1", filename, size);
 	system(command);
-
 	int fd = open(filename, flags);
 	return fd;
 }
@@ -67,7 +63,7 @@ int create_file(int size, int flags){
 static void sig_handlerA(int sn){
 	printf("In response to question A: Signal %s is generated.\n", signals[sn-1]);
 	unlink(filename);
-	exit(-1);
+	exit(0);
 }
 
 void qA(){
@@ -86,7 +82,6 @@ void qA(){
 	printf("About to MAP_SHARED with PROT_READ from fd %d\n", fd);
 	addr = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
 	close(fd);
-
 	printf("About to write one byte to address %p\n", addr);
 	*addr = 'A'; 
 
@@ -122,7 +117,7 @@ void qBC(int flag){
 
 void qDE(){
 	int i;
-	int size = 4093;
+	int size = 4097;
 	filename = "testfileDE";
 	int fd = create_file(size, O_RDWR);
 	int filesize = 4093;
@@ -138,19 +133,15 @@ void qDE(){
 		addr[size+i] = str[i];
 //	filesize = stat it!;
 	printf("The new size of the file is %d bytes\n", filesize);
-
 	printf("\nMemory dump starting at offset %d:\n",size);
 	for(i=0;i<5;i++) printf("<%02X> ",addr[size+i]);
-	
 	lseek(fd, size, SEEK_SET);
 	char buf[20];
 	read(fd, buf, 5);
 	buf[5] = '\0';
-	printf("File dump starting at offset %d:\n", size);
+	printf("\nFile dump starting at offset %d:\n", size);
 	for(i=0;i<5;i++) printf("<%02X> ",buf[i]);
-	
-	printf("\nIn response to question D: NO, the file does not change.\n");
-	
+	printf("\nIn response to question D: NO, the file does not change.\n\n");
 	printf("About to expand file by 10 bytes and write 4 bytes to the end.\n");
 	str = "FGHI";
 	lseek(fd, size+10, SEEK_SET);
@@ -197,4 +188,31 @@ void qF(){
 	printf("About to read one byte from second page mapped... ");
 	c = addr[4096+offset];
 	printf("Nothing Happened?\n"); /* Not gonna happen */
+}
+
+jmp_buf int_jb;
+
+static void sig_handlerEC(int sn){
+//	printf("HEY BABE %d", sn);
+	longjmp(int_jb,1);
+}
+
+void EC(){
+	int i, addr1; char c;
+	signal(7, sig_handlerEC);
+	signal(11, sig_handlerEC);
+	char *addr;
+	addr = mmap(NULL, 22, PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	for(i=2;;i++){
+		if(setjmp(int_jb)!=0) {
+			if(!addr1){
+				addr1 = i;
+				continue;
+			} else	break;
+		}
+		c = addr[i];
+		
+	}
+	printf("%d", i);
+	printf("%d", addr1);
 }

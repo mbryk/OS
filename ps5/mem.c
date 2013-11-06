@@ -12,8 +12,6 @@
 #include <setjmp.h>
 
 char *filename = "testfile";
-/* My Signals list is a bit different than yours. Platform specific order */
-char *signals[31] = {"SIGHUP","SIGINT","SIGQUIT","SIGILL","SIGTRAP","SIGABRT","SIGBUS","SIGFPE","SIGKILL","SIGUSR1","SIGSEGV","SIGUSR2","SIGPIPE","SIGALRM","SIGTERM","SIGSTKFLT","SIGCHLD","SIGCONT","SIGSTOP","SIGTSTP","SIGTTIN","SIGTTOU","SIGURG","SIGXCPU","SIGXFSZ","SIGVTALRM","SIGPROF","SIGWINCH","SIGIO","SIGPWR","SIGSYS"};
 jmp_buf int_jb;
 void EC();
 
@@ -26,29 +24,28 @@ int create_file(int size, int flags){
 	return fd;
 }
 static void sig_handlerA(int sn){
-	printf("In response to question A: Signal %s is generated.\n", signals[sn-1]);
+	printf("In response to question A: Signal #%d is generated: %s\n",sn,strsignal(sn));
 	unlink(filename);
 	exit(0);
 }
 static void sig_handlerF(int sn){
 	printf("Uh oh!\n");
-	printf("In response to question F:\nAccessing first page results in no signal. The byte returned is a 0.\nAccessing second page results in a %s.\n", signals[sn-1]);
+	printf("In response to question F:\nAccessing first page results in no signal. The byte returned is a 0.\nAccessing second page results in signal #%d: %s.\n", sn, strsignal(sn));
 	/* This happens because of demand paging. */
 	unlink(filename);
 	exit(0);
 }
 
 int main(int argc, char **argv){
-	char qc;
-	int q;
 	if(argc!=2){
 		fprintf(stderr, "Error - Improper Input.\n");
 		exit(-1);
 	}
 	int i, size, fd, offset;
 	char *addr, *str, *answer;
-	qc = argv[1][0];
+	struct stat st;
 	int flag = MAP_PRIVATE;
+	char qc = argv[1][0];
 	switch(qc){
 		case 'A': case 'a':
 			for(i=1; i<32; i++){
@@ -95,16 +92,15 @@ int main(int argc, char **argv){
 		case 'D': case 'd': case 'E': case 'e':
 			size = 4097;
 			fd = create_file(size, O_RDWR);
-			int filesize = 4093;
-			//	filesize = stat it!;
-			printf("The size of the file is %d bytes\n", filesize);
+			fstat(fd, &st);
+			printf("The size of the file is %ld bytes\n", st.st_size);
 			printf("About to MAP_SHARED with read & write from fd %d\n", fd);
 			addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 			printf("About to write 5 bytes to offset %d\n", size);
 			str = "ABCDE";
 			for(i=0;i<5;i++) addr[size+i] = str[i];
-			//	filesize = stat it!;
-			printf("The new size of the file is %d bytes\n", filesize);
+			fstat(fd, &st);
+			printf("The new size of the file is %d bytes\n", st.st_size);
 			printf("\nMemory dump starting at offset %d:\n",size);
 			for(i=0;i<5;i++) printf("<%02X> ",addr[size+i]);
 			lseek(fd, size, SEEK_SET);
@@ -162,24 +158,28 @@ int main(int argc, char **argv){
 	return 0;
 }
 static void sig_handlerEC(int sn){
-//	printf("HEY BABE %d", sn);
+	printf("HEY BABE %s\n", strsignal(sn));
 	longjmp(int_jb,1);
+	exit(0);
 }
 void EC(){
-	int i, addr1; char c;
-	signal(7, sig_handlerEC);
-	signal(11, sig_handlerEC);
+	int i; char c;
+	int addr1 = 0;
+	signal(SIGSEGV, sig_handlerEC);
 	char *addr;
-	addr = mmap(NULL, 22, PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-	for(i=2;;i++){
+	addr = mmap(NULL, 1, PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	for(i=2;i>0;i++){
 		if(setjmp(int_jb)!=0) {
+			signal(SIGSEGV, sig_handlerEC);
+			printf("%d", i);
 			if(!addr1){
 				addr1 = i;
+				mmap(addr, 1, PROT_READ, MAP_SHARED|MAP_ANONYMOUS, -1, i);
 				continue;
 			} else	break;
 		}
 		c = addr[i];
 	}
-	printf("%d", i);
-	printf("%d", addr1);
+	printf("\n%d", i);
+	printf("\n%d", addr1);
 }

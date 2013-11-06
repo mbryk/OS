@@ -53,9 +53,10 @@ int main(int argc, char **argv){
 	switch(qc){
 		case 'A': case 'a':
 			for(i=1; i<32; i++){
-				if(i==2||i==9||i==16||i==17||i==19) continue;
+				if(i==SIGINT||i==SIGKILL||i==SIGCHLD||i==SIGSTOP) continue;
 				if(signal(i, sig_handlerA)==SIG_ERR){
 					fprintf(stderr,"Error- Setting Signal %d Handler: %s\n", i, strerror(errno));
+					exit(-1);
 				}
 			}
 			size = 4096;
@@ -68,7 +69,7 @@ int main(int argc, char **argv){
 			close(fd);
 			printf("About to write one byte to address %p\n", addr);
 			*addr = 'A'; 
-			printf("In response to question A: Nothing Happened!"); // Not gonna happen
+			printf("In response to question A: Nothing Happened!"); /* Not gonna happen */
 			unlink(filename);
 			break;
 
@@ -138,8 +139,10 @@ int main(int argc, char **argv){
 			}
 			printf("\nFile dump starting at offset %d:\n", size);
 			for(i=0;i<5;i++) printf("<%02X> ",bufD[i]);
-			answer = strncmp(str,bufD,5)?"NO, the file does not change":"YES, the file does change";
-			printf("\nIn response to question D: %s.\n\n", answer); // No. It does not change.
+			int ans_int = !strncmp(str,bufD,5);
+			answer = ans_int?"YES, the file does change":"NO, the file does not change";
+			printf("\nIn response to question D: %s.\n\n", answer); /* No. It does not change. */
+			if(ans_int) break;
 			printf("About to expand file by 10 bytes and write 4 bytes to the end.\n");
 			char *str2 = "FGHI";
 			if(lseek(fd, size+10, SEEK_SET)==-1){
@@ -170,9 +173,10 @@ int main(int argc, char **argv){
 
 		case 'F': case 'f':
 			for(i=1; i<32; i++){
-				if(i==2||i==9||i==16||i==17||i==19) continue;
-				if(signal(i, sig_handlerF)==SIG_ERR){
+				if(i==SIGINT||i==SIGKILL||i==SIGCHLD||i==SIGSTOP) continue;
+				if(signal(i, sig_handlerA)==SIG_ERR){
 					fprintf(stderr,"Error- Setting Signal %d Handler: %s\n", i, strerror(errno));
+					exit(-1);
 				}
 			}
 			size = 12;

@@ -9,20 +9,24 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <setjmp.h>
 
 char *filename = "testfile";
-jmp_buf int_jb;
-void EC();
-
 int create_file(int size, int flags){
 	printf("Creating %d byte random file %s\n", size, filename);
 	char command[100];
 	sprintf(command, "dd if=/dev/urandom of=%s bs=%d count=1", filename, size);
-	system(command);
-	int fd = open(filename, flags);
+	if(system(command)==-1){
+		perror("Error creating random test file");
+		exit(-1);
+	}
+	int fd;
+	if((fd=open(filename, flags))==-1){
+		perror("Error opening random test file");
+		exit(-1);
+	}
 	return fd;
 }
+
 static void sig_handlerA(int sn){
 	printf("In response to question A: Signal #%d is generated: %s\n",sn,strsignal(sn));
 	unlink(filename);
@@ -31,14 +35,14 @@ static void sig_handlerA(int sn){
 static void sig_handlerF(int sn){
 	printf("Uh oh!\n");
 	printf("In response to question F:\nAccessing first page results in no signal. The byte returned is a 0.\nAccessing second page results in signal #%d: %s.\n", sn, strsignal(sn));
-	/* This happens because of demand paging. */
+	/* This happens because of demand paging. You make a memory region with mmap of two pages. However, when copying the data from the file, you only ask for one page, which then goes into the page table. So, when accessing the first page, regardless if the offset is past the end of the file, the PTE is already there. However, when accessing the second page, even though it's in a memory region, it doesn't correspond to a physical page, which sends a bus error. */
 	unlink(filename);
 	exit(0);
 }
 
 int main(int argc, char **argv){
-	if(argc!=2){
-		fprintf(stderr, "Error - Improper Input.\n");
+	if(argc!=2 || strlen(argv[1])!=1){
+		fprintf(stderr, "Error - Improper Input.\nOnly one input argument is allowed. Must be a letter from A-F.\n");
 		exit(-1);
 	}
 	int i, size, fd, offset;
@@ -57,13 +61,15 @@ int main(int argc, char **argv){
 			size = 4096;
 			fd = create_file(size, O_RDWR);
 			printf("About to MAP_SHARED with PROT_READ from fd %d\n", fd);
-			addr = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+			if((addr=mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0))==MAP_FAILED){
+				perror("Error Mapping File to Memory");
+				exit(-1);
+			}
 			close(fd);
 			printf("About to write one byte to address %p\n", addr);
 			*addr = 'A'; 
 			printf("In response to question A: Nothing Happened!"); // Not gonna happen
 			unlink(filename);
-			exit(0);
 			break;
 
 		case 'B': case 'b':
@@ -73,14 +79,23 @@ int main(int argc, char **argv){
 			fd = create_file(size, O_RDWR);
 			char *maps[2] = {"MAP_SHARED","MAP_PRIVATE"};
 			printf("About to %s with read & write from fd %d\n", maps[flag-1], fd);
-			addr = mmap(NULL, size, PROT_READ|PROT_WRITE, flag, fd, 0);
+			if((addr=mmap(NULL, size, PROT_READ|PROT_WRITE, flag, fd, 0))==MAP_FAILED){
+				perror("Error Mapping File to Memory");
+				exit(-1);
+			}
 			printf("About to write 4 bytes to offset 30 from address %p\n", addr);
 			offset = 30;
 			str = "ABCD";
 			for(i=0; i<4; i++) addr[offset+i] = str[i];
-			lseek(fd, offset, SEEK_SET);
+			if(lseek(fd, offset, SEEK_SET)==-1){
+				perror("Error seeking through file");
+				exit(-1);
+			}
 			char bufC[5];
-			read(fd, bufC, 4);
+			if(read(fd, bufC, 4)==-1){
+				perror("Error Reading from file");
+				exit(-1);
+			}
 			printf("Write to Memory: "); for(i=0;i<4;i++) printf("<%02X> ", str[i]);
 			printf("\nRead from File: "); for(i=0;i<4;i++) printf("<%02X> ", bufC[i]);
 			answer = strncmp(str,bufC,4)?"NO, the file is not updated with the write to memory":"YES, the update is immediately visible";
@@ -92,32 +107,59 @@ int main(int argc, char **argv){
 		case 'D': case 'd': case 'E': case 'e':
 			size = 4097;
 			fd = create_file(size, O_RDWR);
-			fstat(fd, &st);
+			if(fstat(fd, &st)==-1){
+				perror("Error getting info on testfile");
+				exit(-1);
+			}
 			printf("The size of the file is %ld bytes\n", st.st_size);
 			printf("About to MAP_SHARED with read & write from fd %d\n", fd);
-			addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+			if((addr=mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0))==MAP_FAILED){
+				perror("Error Mapping File to Memory");
+				exit(-1);
+			}
 			printf("About to write 5 bytes to offset %d\n", size);
 			str = "ABCDE";
 			for(i=0;i<5;i++) addr[size+i] = str[i];
-			fstat(fd, &st);
+			if(fstat(fd, &st)==-1){
+				perror("Error getting info on testfile");
+				exit(-1);
+			}
 			printf("The new size of the file is %d bytes\n", st.st_size);
 			printf("\nMemory dump starting at offset %d:\n",size);
 			for(i=0;i<5;i++) printf("<%02X> ",addr[size+i]);
-			lseek(fd, size, SEEK_SET);
+			if(lseek(fd, size, SEEK_SET)==-1){
+				perror("Error seeking through file");
+				exit(-1);
+			}
 			char bufD[20];
-			read(fd, bufD, 5);
+			if(read(fd, bufD, 5)==-1){
+				perror("Error reading from file");
+				exit(-1);
+			}
 			printf("\nFile dump starting at offset %d:\n", size);
 			for(i=0;i<5;i++) printf("<%02X> ",bufD[i]);
 			answer = strncmp(str,bufD,5)?"NO, the file does not change":"YES, the file does change";
 			printf("\nIn response to question D: %s.\n\n", answer); // No. It does not change.
 			printf("About to expand file by 10 bytes and write 4 bytes to the end.\n");
 			char *str2 = "FGHI";
-			lseek(fd, size+10, SEEK_SET);
-			write(fd, str2, 4);
+			if(lseek(fd, size+10, SEEK_SET)==-1){
+				perror("Error seeking through file");
+				exit(-1);
+			}
+			if(write(fd, str2, 4)==-1){
+				perror("Error expanding and writing to file");
+				exit(-1);
+			}
 			printf("Memory dump starting at offset %d:\n", size);
 			for(i=0;i<14;i++) printf("<%02X> ",addr[size+i]);
-			lseek(fd, size, SEEK_SET);
-			read(fd, bufD, 14);
+			if(lseek(fd, size, SEEK_SET)==-1){
+				perror("Error seeking through file");
+				exit(-1);
+			}
+			if(read(fd, bufD, 14)==-1){
+				perror("Error reading from file");
+				exit(-1);
+			}
 			printf("\nFile dump starting at offset %d:\n", size);
 			for(i=0;i<14;i++) printf("<%02X> ",bufD[i]);
 			answer = strncmp(bufD, str,5)?"NOT":"indeed";
@@ -136,7 +178,10 @@ int main(int argc, char **argv){
 			size = 12;
 			fd = create_file(size, O_RDWR);
 			printf("About to MAP_SHARED with PROT_READ from fd %d\n", fd);
-			addr = mmap(NULL, 8192, PROT_READ, MAP_SHARED, fd, 0);
+			if((addr=mmap(NULL, 8192, PROT_READ, MAP_SHARED, fd, 0))==MAP_FAILED){
+				perror("Error Mapping file to memory");
+				exit(-1);
+			}
 			close(fd);
 			char c;
 			offset = 30;
@@ -147,39 +192,10 @@ int main(int argc, char **argv){
 			c = addr[4096+offset];
 			printf("Nothing Happened?\n"); /* Not gonna happen */
 			break;
-		case 'G': case 'g': /* Extra Credit */
-			EC();
-			break;
 		default:
-			fprintf(stderr, "Error- Improper Input.\n");
+			fprintf(stderr, "Error - Improper Input.\nOnly one input argument is allowed. Must be a letter from A-F.\n");
 			exit(-1);
 			break;
 	}
 	return 0;
-}
-static void sig_handlerEC(int sn){
-	printf("HEY BABE %s\n", strsignal(sn));
-	longjmp(int_jb,1);
-	exit(0);
-}
-void EC(){
-	int i; char c;
-	int addr1 = 0;
-	signal(SIGSEGV, sig_handlerEC);
-	char *addr;
-	addr = mmap(NULL, 1, PROT_READ, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-	for(i=2;i>0;i++){
-		if(setjmp(int_jb)!=0) {
-			signal(SIGSEGV, sig_handlerEC);
-			printf("%d", i);
-			if(!addr1){
-				addr1 = i;
-				mmap(addr, 1, PROT_READ, MAP_SHARED|MAP_ANONYMOUS, -1, i);
-				continue;
-			} else	break;
-		}
-		c = addr[i];
-	}
-	printf("\n%d", i);
-	printf("\n%d", addr1);
 }

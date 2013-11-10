@@ -1,0 +1,50 @@
+./a.out A
+Creating 4096 byte random file testfile
+About to MAP_SHARED with PROT_READ from fd 3
+About to write one byte to address 0x7fb7231a1000
+In response to question A: Signal #11 is generated: Segmentation fault
+
+./a.out B
+Creating 4097 byte random file testfile
+About to MAP_SHARED with read & write from fd 3
+About to write 4 bytes to offset 30 from address 0x7f133f3c0000
+Write to Memory: <41> <42> <43> <44> 
+Read from File: <41> <42> <43> <44> 
+In response to question B: YES, the update is immediately visible.
+
+./a.out C
+Creating 4097 byte random file testfile
+About to MAP_PRIVATE with read & write from fd 3
+About to write 4 bytes to offset 30 from address 0x7f733076a000
+Write to Memory: <41> <42> <43> <44> 
+Read from File: <FFFFFFBE> <FFFFFF8D> <0F> <2B> 
+In response to question C: NO, the file is not updated with the write to memory.
+
+./a.out D
+Creating 4097 byte random file testfile
+The size of the file is 4097 bytes
+About to MAP_SHARED with read & write from fd 3
+About to write 5 bytes to offset 4097
+The new size of the file is 4097 bytes
+
+Memory dump starting at offset 4097:
+<41> <42> <43> <44> <45> 
+File dump starting at offset 4097:
+<00> <00> <00> <00> <00> 
+In response to question D: NO, the file does not change.
+
+About to expand file by 10 bytes and write 4 bytes to the end.
+Memory dump starting at offset 4097:
+<41> <42> <43> <44> <45> <00> <00> <00> <00> <00> <46> <47> <48> <49> 
+File dump starting at offset 4097:
+<41> <42> <43> <44> <45> <00> <00> <00> <00> <00> <46> <47> <48> <49> 
+In response to question E: The data is indeed visible in the file!
+
+./a.out F
+Creating 12 byte random file testfile
+About to MAP_SHARED with PROT_READ from fd 3
+About to read one byte from first page mapped... Nothing Happened!
+About to read one byte from second page mapped... Uh oh!
+In response to question F:
+Accessing first page results in no signal. The byte returned is a 0.
+Accessing second page results in signal #7: Bus error.

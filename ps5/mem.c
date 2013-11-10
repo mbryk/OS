@@ -174,7 +174,7 @@ int main(int argc, char **argv){
 		case 'F': case 'f':
 			for(i=1; i<32; i++){
 				if(i==SIGINT||i==SIGKILL||i==SIGCHLD||i==SIGSTOP) continue;
-				if(signal(i, sig_handlerA)==SIG_ERR){
+				if(signal(i, sig_handlerF)==SIG_ERR){
 					fprintf(stderr,"Error- Setting Signal %d Handler: %s\n", i, strerror(errno));
 					exit(-1);
 				}

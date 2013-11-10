@@ -11,12 +11,12 @@
 #include <netdb.h>
 
 int main(int argc, char **argv){
-	if(argc<3){ fprintf(stderr, "Error- Incorrect Input. Must include hostname and port.\n"); return -1;}
+	if(argc<3){ fprintf(stderr, "Error- Usage: %s <hostname> <port>\n",argv[0]); return -1;}
 
 	int s;
 	if((s=socket(AF_INET, SOCK_STREAM,0))==-1){perror("Socket"); return -1;}
 	
-	struct sockaddr_in sin, dest_sin;
+	struct sockaddr_in sin, dest;
 	sin.sin_family = AF_INET;
 	sin.sin_port = 0;
 	sin.sin_addr.s_addr=INADDR_ANY;
@@ -26,26 +26,26 @@ int main(int argc, char **argv){
 		return -1;
 	}
 	
-	dest_sin.sin_family = AF_INET;
+	dest.sin_family = AF_INET;
 
 	int dest_port;
 	if((dest_port=atoi(argv[2]))==0){
 		fprintf(stderr,"Error- Invalid Port #: %s\n",argv[2]);
 		return -1;
 	}
-	dest_sin.sin_port = htons(dest_port);
+	dest.sin_port = htons(dest_port);
 
-	if((dest_sin.sin_addr.s_addr=inet_addr(argv[1]))==-1){
+	if((dest.sin_addr.s_addr=inet_addr(argv[1]))==-1){
 		struct hostent *he;
 		if(!(he=gethostbyname(argv[1]))){
 			fprintf(stderr, "Unknown host: %s\n",argv[1]);
 			herror(" ");
 			return -1;			
 		}
-		memcpy(&sin.sin_addr.s_addr,he->h_addr_list[0],sizeof sin.sin_addr.s_addr);
+		memcpy(&dest.sin_addr.s_addr,he->h_addr_list[0],sizeof dest.sin_addr.s_addr);
 	}
 
-	if(connect(s, (struct sockaddr *)&dest_sin, sizeof dest_sin)<0){
+	if(connect(s, (struct sockaddr *)&dest, sizeof dest)<0){
 		perror("connect"); close(s); return -1;
 	}
 
@@ -66,6 +66,7 @@ int main(int argc, char **argv){
 		if(n==-1){ perror("Error writing to socket"); return -1; }
 		bytes+=r_full;
 	}
+	close(s);
 	if(gettimeofday(&end,NULL)==-1){ perror("Error recording end time of write to socket"); return -1; }
 	
 	double secs = difftime(end.tv_sec,begin.tv_sec);

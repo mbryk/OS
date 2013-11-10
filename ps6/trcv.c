@@ -11,7 +11,7 @@
 #include <netdb.h>
 
 int main(int argc, char **argv){
-	if(argc==1){ fprintf(stderr, "Error- Incorrect Input. Must include listening port\n"); return -1;}
+	if(argc==1){ fprintf(stderr, "Error- Usage: %s <Port #>\n",argv[0]); return -1;}
 
 	int s,s2,port;
 	if((s=socket(AF_INET, SOCK_STREAM,0))==-1){perror("Socket"); return -1;}
@@ -53,6 +53,7 @@ int main(int argc, char **argv){
                 if(n==-1){ perror("Error writing to output"); return -1; }
                 bytes+=r_full;
         }
+	close(s);close(s2);
         if(gettimeofday(&end,NULL)==-1){ perror("Error recording end time of read from socket"); return -1; }
 
         double secs = difftime(end.tv_sec,begin.tv_sec);

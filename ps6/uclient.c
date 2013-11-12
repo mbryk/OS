@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <errno.h>
 
 int main(int argc, char **argv){
 	if(argc<4){ fprintf(stderr, "Error- Usage: %s <hostname> <port> <request_string>\n", argv[0]); return -1;}
@@ -14,11 +15,11 @@ int main(int argc, char **argv){
 	
 	if((s=socket(AF_INET, SOCK_DGRAM, 0))==-1){perror("SOCKET");return -1;}
 	struct sockaddr_in sin, server, from;
-/*	sin.sin_family = AF_INET;
+	sin.sin_family = AF_INET;
 	sin.sin_port = 0;
 	sin.sin_addr.s_addr=INADDR_ANY;
 	if(bind(s, (struct sockaddr *)&sin, &alen)<0){perror("Bind");close(s);return -1;}
-*/	
+	
 	server.sin_family = AF_INET;
 	int dest_port;
 	if((dest_port=atoi(argv[2]))==0){
@@ -47,7 +48,7 @@ int main(int argc, char **argv){
 	} while(from.sin_addr.s_addr != server.sin_addr.s_addr);
 	/* Don't want to just take first connection. You want the response from the server. */
 	buf[buflen] = '\0';
-	printf("Received answer: %s\n", buf);
+	printf("Received answer: %s", buf);
 	
 	return 0;
 }

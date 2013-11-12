@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <errno.h>
 
 int main(int argc, char **argv){
 	if(argc==1){ fprintf(stderr, "Error- Usage: %s <Port #>\n",argv[0]); return -1;}
@@ -59,7 +60,7 @@ int main(int argc, char **argv){
         double secs = difftime(end.tv_sec,begin.tv_sec);
         double usecs = difftime(end.tv_usec,begin.tv_usec)/1000000;
         secs += usecs; /* This is fine, regarding the carry. If begin.usec>end.usec, then usecs is negative and secs is decremented properly. */
-        double rate = bytes/secs/1000000;
+        double rate = bytes/secs/1048576;
 
 	struct hostent *he;
 	if(!(he=gethostbyaddr((char *)&from.sin_addr, sizeof from.sin_addr, AF_INET))){

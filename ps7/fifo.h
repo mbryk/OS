@@ -1,5 +1,5 @@
 /* Mark Bryk OS PS7 FIFO.H */
-#ifndef FIFO.H
+#ifndef FIFO_H
 #define FIFO_H
 
 #include "sem.h"
@@ -12,7 +12,7 @@ volatile struct fifo{
 	int next_read;
 	int next_write;
 	struct sem *s;
-}
+};
 void fifo_init(struct fifo*);
 void fifo_wr(struct fifo *, unsigned long);
 unsigned long fifo_rd(struct fifo*);

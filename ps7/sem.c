@@ -1,8 +1,12 @@
 /* Mark Bryk OS PS7 SEM.C */
+#include "sem.h"
 
+sigset_t mask;
 void sem_init(struct sem *s, int count){
 	s->lock = 0;
 	s->count = count;
+	s->qnext = 0;
+	s->qtot = 0;
 	memset(s->queue, 0, QSIZE);
 }
 
@@ -16,15 +20,23 @@ int sem_try(struct sem *s){
 	s->lock = 0;
 	return l;		
 }
+static void handler(int sn){
+	printf("handled\n");
+}
 
 void sem_wait(struct sem *s){
+	sigset_t mask;
+	sigfillset(&mask);
+	sigdelset(&mask,SIGUSR1);
+	signal(SIGUSR1,handler);
 	s->count--;
 	while(1){
 		while(tas(&s->lock)!=0); // Grab lock for count check
 		if(s->count < 0){ // Somebody is using semaphore
+			s->queue[s->qtot++] = proc_num;
+			s->qtot %= QSIZE;
 			s->lock = 0; // Release lock
-			add to end of queue;
-			sleep;
+			sigsuspend(&mask);
 			continue;	
 		}
 		s->lock = 0;
@@ -36,7 +48,10 @@ void sem_inc(struct sem *s){
 	while(tas(&s->lock)!=0); // Grab lock for count check
 	int c = s->count;
 	s->lock = 0;
+	int q;
 	if(c <= 0){ // There are people waiting
-		wakeup(queue[0]);
+		q = s->qnext;
+		s->qnext = (s->qnext+1)%QSIZE;	
+		kill(lookup[q],SIGUSR1);
 	}
 }

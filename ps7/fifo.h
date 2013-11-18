@@ -6,16 +6,12 @@
 
 #define BSIZE 4096
 
-volatile struct fifo{
+struct fifo{
 	unsigned long buf[BSIZE];
-	int item_count;
-	int next_read;
-	int next_write;
-	struct sem *s;
+	int next_read, next_write;
+	struct sem *mutex,*full,*empty;
 };
 void fifo_init(struct fifo*);
 void fifo_wr(struct fifo *, unsigned long);
 unsigned long fifo_rd(struct fifo*);
-
- 
 #endif

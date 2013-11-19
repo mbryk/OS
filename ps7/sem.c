@@ -28,8 +28,8 @@ int sem_try(struct sem *s){
 void sem_wait(struct sem *s){
 	while(1){
 		while(tas(&s->lock)!=0); // Grab lock for count check
-		s->count--;
 		if(s->count > 0){ // Can use semaphore
+			s->count--;
 			s->lock = 0;
 			break;
 		}

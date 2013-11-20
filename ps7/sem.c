@@ -27,25 +27,23 @@ int sem_try(struct sem *s){
 }
 void sem_wait(struct sem *s){
 	while(1){
-		while(tas(&s->lock)!=0); // Grab lock for count check
-		if(s->count > 0){ // Can use semaphore
+		while(tas(&s->lock)!=0);
+		if(s->count > 0){
 			s->count--;
 			s->lock = 0;
 			break;
 		}
 		s->queue[s->qtot++] = getpid();
 		s->qtot %= QSIZE;
-		s->lock = 0; // Release lock
+		s->lock = 0;
 		sigsuspend(&mask);
 	}
 }
 void sem_inc(struct sem *s){
-	while(tas(&s->lock)!=0); // Grab lock for count check
-	int c = ++s->count;
-	s->lock = 0;
-	int q;
-	if(c>0 && s->qnext!=s->qtot){ // There is room and there are people waiting
+	while(tas(&s->lock)!=0);
+	if(++s->count>0 && s->qnext!=s->qtot){ /* There is room and there are people waiting */
 		kill(s->queue[s->qnext],SIGUSR1);
 		s->qnext = (s->qnext+1)%QSIZE;	
 	}
+	s->lock = 0;
 }

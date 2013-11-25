@@ -9,7 +9,7 @@
 struct fifo{
 	unsigned long buf[BSIZE];
 	int next_read, next_write;
-	struct sem *mutex,*full,*empty;
+	struct sem mutex,full,empty;
 };
 void fifo_init(struct fifo*);
 void fifo_wr(struct fifo *, unsigned long);

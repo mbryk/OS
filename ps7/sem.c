@@ -1,8 +1,10 @@
 /* Mark Bryk OS PS7 SEM.C */
 #include "sem.h"
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <signal.h>
 
 extern sigset_t mask;
@@ -42,7 +44,7 @@ void sem_wait(struct sem *s){
 void sem_inc(struct sem *s){
 	while(tas(&s->lock)!=0);
 	if(++s->count>0 && s->qnext!=s->qtot){ /* There is room and there are people waiting */
-		kill(s->queue[s->qnext],SIGUSR1);
+		if(kill(s->queue[s->qnext],SIGUSR1)==-1){ perror("Error Waking Up Next Process"); exit(-1); }
 		s->qnext = (s->qnext+1)%QSIZE;	
 	}
 	s->lock = 0;

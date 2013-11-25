@@ -1,0 +1,32 @@
+mark@ubuntu:~/OS/ps7$ ./a.out 
+Writer #1 = 101
+Writer #1 = 102
+			Reader #1 = 101
+Writer #2 = 201
+Writer #1 = 103
+			Reader #1 = 201
+Writer #2 = 202
+Writer #3 = 301
+			Reader #1 = 301
+Writer #2 = 203
+Writer #4 = 401
+Writer #3 = 302
+Writer #4 = 402
+Writer #3 = 303
+			Reader #1 = 102
+Writer #4 = 403
+			Reader #1 = 401
+			Reader #1 = 103
+			Reader #1 = 202
+Writer #5 = 501
+			Reader #1 = 203
+Writer #5 = 502
+			Reader #1 = 501
+Writer #5 = 503
+			Reader #1 = 402
+			Reader #1 = 302
+			Reader #1 = 303
+			Reader #1 = 403
+			Reader #1 = 502
+			Reader #1 = 503
+

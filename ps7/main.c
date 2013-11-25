@@ -14,47 +14,53 @@ sigset_t mask;
 static void handler(int sn){ }
 int main(int argc, char **argv){
 	/* For readers not to hang, readers*readBytes <= writers*writeBytes */
-	int readers = 1; int writers = 3;
-	int readBytes = 9; int writeBytes = 3;
+	int readers = 1; int writers = 5;
+	int readBytes = 15; int writeBytes = 3;
+	if((readers+writers)>N_PROC){fprintf(stderr, "Error - Too Many Processes Opened\n"); return -1;}
+
 	sigfillset(&mask);
-	sigdelset(&mask,SIGUSR1);
+	sigdelset(&mask,SIGUSR1); /* Mask is an extern which can be accessed by every process from sem.c */
 	signal(SIGUSR1, handler);
+
 	struct fifo *f = mmap(NULL, sizeof(struct fifo), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS,-1,0);
 	if(f==MAP_FAILED){ perror("Error Mapping Fifo to Memory"); return -1;}
 	fifo_init(f);
+
 	int i,p; int j = 0;
-	int pn2pid[readers+writers];
+	int pn2pid[readers+writers]; /* Lookup Table For Debugging Prints */
 	unsigned long d;
-	for(i=0; i<readers; i++){
+	for(i=1; i<=readers; i++){
 		p=fork();
 		if(p==-1){perror("Error Forking a Reader"); return -1;}
 		else if(!p){
 			for(j=0;j<readBytes;j++){
 				p = getpid();
 				d = fifo_rd(f);
-				fprintf(stderr, "%d read %lu\n",p,d);
+				fprintf(stderr, "\t\t\tReader #%d = %lu\n",i,d);
 			}
 			return 0;
 		}
 		pn2pid[i]=p;
 	}
-	for(i=0; i<writers; i++){
+	for(i=1; i<=writers; i++){
 		p=fork();
 		if(p==-1){perror("Error Forking a Writer"); return -1;}
 		else if(!p){
-			for(j=0;j<writeBytes;j++){
+			for(j=1;j<=writeBytes;j++){
 				p = getpid();
-				d = i*100+j+5;
+				d = i*100+j;
 				fifo_wr(f,d);
-				fprintf(stderr, "%d wrote %lu\n",p,d);
+				fprintf(stderr, "Writer #%d = %lu\n",i,d);
 			}
 			return 0;
 		}
 		pn2pid[readers+i] = p;
 	}
+	/* LOOKUP TABLE
 	for(j=0;j<readers+writers;j++){
 		fprintf(stderr, "Procnum[%d] = Process #%d\n", j, pn2pid[j]);
 	}
+	*/
 
 	int stat;
 	for(i=0;i<readers+writers;i++){

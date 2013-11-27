@@ -1,0 +1,37 @@
+*** Mark Bryk OS PS8 STRACES ***
+
+mark@ubuntu:~/OS/ps8$ strace ./2
+execve("./2", ["./2"], [/* 40 vars */]) = 0
+write(1, "Hello World\n", 12Hello World
+)           = 12
+--- SIGSEGV (Segmentation fault) @ 0 (0) ---
++++ killed by SIGSEGV (core dumped) +++
+Segmentation fault (core dumped)
+
+
+mark@ubuntu:~/OS/ps8$ strace ./3
+execve("./3", ["./3"], [/* 40 vars */]) = 0
+write(1, "Hello World\n", 12Hello World
+)           = 12
+_exit(12)                               = ?
+
+
+mark@ubuntu:~/OS/ps8$ strace ./4a
+execve("./4a", ["./4a"], [/* 40 vars */]) = 0
+write(5, "Hello World\n", 12)           = -1 EBADF (Bad file descriptor)
+_exit(-9)                               = ?
+
+
+mark@ubuntu:~/OS/ps8$ strace ./4b
+execve("./4b", ["./4b"], [/* 40 vars */]) = 0
+write(1, "Hello World\n", 12Hello World
+)           = 12
+socket(PF_DECnet, 0x4000fe /* SOCK_??? */, 12) = -1 EINVAL (Invalid argument)
+--- SIGSEGV (Segmentation fault) @ 0 (0) ---
++++ killed by SIGSEGV (core dumped) +++
+Segmentation fault (core dumped)
+
+---------------------------------
+With no exit call, the program kept running, all the way through the text region, until the instruction pointer tried to read from an address beyond the text memory region. Therefore, a segmentation fault occured.
+In 4a, where an invalid FD was given to the write syscall, the write returned with a -1. However, this affected nothing. The program kept running, and called the exit system call regularly. It did not print anything, but exited cleanly.
+In 4b, an incorrect system call was made instead of exit. Once again the system call failed, yet the program continued running, until it reached beyond the text region and triggered a segmentation fault.

@@ -1,0 +1,149 @@
+/* Mark Bryk OS PS8 P1.C */
+#include <stdio.h>
+
+int main(){
+	printf("Hello World\n");
+	return 0;
+}
+
+---------------------------------
+
+# P2.S
+.global _start
+.text
+_start:
+	movq $1, %rax		# Write System Call # for x86_64
+    movq $1, %rdi
+    movq $string, %rsi
+    movq $12, %rdx
+	syscall
+string:
+	.ascii "Hello World\n"
+
+---------------------------------
+
+# P3.S
+.global _start
+.text
+_start:
+	movq $1, %rax
+    movq $1, %rdi
+    movq $string, %rsi
+    movq $12, %rdx
+	syscall
+    mov %rax, %rdi 		# Exit Return Code = Return Val from Write
+    movq $60, %rax		# Exit System Call # for x86_64
+    syscall
+string:
+	.ascii "Hello World\n"
+
+---------------------------------
+
+# P4A.S
+.global _start
+.text
+_start:
+	movq $1, %rax
+	movq $5, %rdi		# Invalid FD for this process
+    movq $string, %rsi
+    movq $12, %rdx
+    syscall
+    mov %rax, %rdi
+    movq $60, %rax
+    syscall
+string:
+    .ascii "Hello World\n"
+
+---------------------------------
+
+# P4B.S
+.global _start
+.text
+_start:
+    movq $1, %rax
+    movq $1, %rdi
+    movq $string, %rsi
+    movq $12, %rdx
+    syscall
+    mov %rax, %rdi
+    movq $41, %rax		# Bad System Call # (SYS_SOCKET)
+    syscall
+string:
+    .ascii "Hello World\n"
+
+---------------------------------
+
+/* P5A.C */
+#include <stdio.h>
+#include <time.h>
+
+int main(){
+	int i;
+	int t = 100000000; /* 100 Million Iterations */
+	struct timespec begin,end;
+	if(clock_gettime(CLOCK_REALTIME,&begin)==-1){ perror("Error Recording Begin Time of Loop"); return -1;}
+
+	for(i=0;i<t;i++){}
+	
+	if(clock_gettime(CLOCK_REALTIME,&end)==-1){ perror("Error Recording End Time of Loop"); return -1;}
+	long secs = end.tv_sec-begin.tv_sec;
+	long nsecs = (end.tv_nsec-begin.tv_nsec);
+	long total = (secs>0)?(secs*1000000000+nsecs):nsecs;
+	double each = ((double)total) / t;
+	printf("Execution Time = \t%ld ns\n",total);
+	printf("Each Iteration = \t%f ns\n",each);
+	return 0;
+}
+
+---------------------------------
+
+/* P5B.C */
+#include <stdio.h>
+#include <time.h>
+
+void empty(){}
+int main(){
+	int i;
+	int t = 100000000;
+	struct timespec begin,end;
+	if(clock_gettime(CLOCK_REALTIME,&begin)==-1){ perror("Error Recording Begin Time of Loop"); return -1;}
+
+	for(i=0;i<t;i++){
+		empty();
+	}
+	
+	if(clock_gettime(CLOCK_REALTIME,&end)==-1){ perror("Error Recording End Time of Loop"); return -1;}
+        long secs = end.tv_sec-begin.tv_sec;
+        long nsecs = (end.tv_nsec-begin.tv_nsec);
+        long total = (secs>0)?(secs*1000000000+nsecs):nsecs;
+        double each = ((double)total) / t;
+        printf("Execution Time = \t%ld ns\n",total);
+        printf("Each Iteration = \t%f ns\n",each);
+        return 0;
+}
+
+---------------------------------
+
+/* P5C.C */
+#include <stdio.h>
+#include <time.h>
+
+int main(){
+	int i;
+	int t = 100000000;
+	struct timespec begin,end;
+	if(clock_gettime(CLOCK_REALTIME,&begin)==-1){ perror("Error Recording Begin Time of Loop"); return -1;}
+
+	for(i=0;i<t;i++){
+		getuid();
+	}
+	
+	if(clock_gettime(CLOCK_REALTIME,&end)==-1){ perror("Error Recording End Time of Loop"); return -1;}
+        long secs = end.tv_sec-begin.tv_sec;
+        long nsecs = (end.tv_nsec-begin.tv_nsec);
+        long total = (secs>0)?(secs*1000000000+nsecs):nsecs;
+        double each = ((double)total) / t;
+        printf("Execution Time = \t%ld ns\n",total);
+        printf("Each Iteration = \t%f ns\n",each);
+        return 0;
+}

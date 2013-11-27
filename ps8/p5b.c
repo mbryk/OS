@@ -1,3 +1,4 @@
+/* Mark Bryk OS PS8 P5B.C */
 #include <stdio.h>
 #include <time.h>
 

@@ -1,0 +1,37 @@
+*** Mark Bryk OS PS8 OUTPUTS ***
+
+mark@ubuntu:~/OS/ps8$ ./1
+Hello World
+
+mark@ubuntu:~/OS/ps8$ ./2
+Hello World
+Segmentation fault (core dumped)
+
+mark@ubuntu:~/OS/ps8$ ./3
+Hello World
+mark@ubuntu:~/OS/ps8$ echo $?
+12
+
+mark@ubuntu:~/OS/ps8$ ./4a
+
+mark@ubuntu:~/OS/ps8$ ./4b
+Hello World
+Segmentation fault (core dumped)
+
+mark@ubuntu:~/OS/ps8$ ./5a
+Execution Time = 	257639098 ns
+Each Iteration = 	2.576391 ns
+
+mark@ubuntu:~/OS/ps8$ ./5b
+Execution Time = 	265567306 ns
+Each Iteration = 	2.655673 ns
+
+mark@ubuntu:~/OS/ps8$ ./5c
+Execution Time = 	4446634660 ns
+Each Iteration = 	44.466347 ns
+
+---------------------------------
+One Loop Iteration 	~ 2.6 ns
+One Function Call 	~ 0.08 ns
+One System Call		~ 41.8 ns
+System Call is approx. 41 ns more expensive than a function call.

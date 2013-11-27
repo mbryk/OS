@@ -6,5 +6,8 @@ _start:
         movq $string, %rsi
         movq $12, %rdx
 	syscall
+        mov %rax, %rdi 		#Exit Return Code = Return Val from Write
+        movq $60, %rax
+        syscall
 string:
 	.ascii "Hello World\n"

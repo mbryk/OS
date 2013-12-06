@@ -1,0 +1,32 @@
+The following suport files are here:
+
+adjstack.c			32 or 64 bit stack offset adjust
+jmpbuf-offsets.h		header file needed for savectx.h
+jmpbuf-offsets64.h		header file needed for savectx64.h
+savectx.S			32 bit version of savectx/restorectx
+savectx.h			header file needed for savectx.S
+savectx64.S			64 bit version of savectx/restorectx
+savectx64.h			header file needed for savectx64.S
+schedtest.c			example test framework  (will only be
+			valid if you do the extra credit!!)
+
+NOTES:
+
+If you are running on a 32-bit system, you must use the 32 bit versions.
+On a 64 bit system, you could use the 32 bit versions (advantage: shorter
+addresses) but you need to use the -m32 flag to all gcc invocations.
+To use the 64-bit version, use -m64 (should be the default) and make
+sure to include savectx64.o in your linkage, not savectx.o
+
+Some students in the past have also reported success with getcontext/setcontext,
+or even with setjmp/longjmp.  Most Linux distributions ship with a feature
+known as "Pointer Mangling" enabled in glibc, which alters the addresses
+used by setjmp/longjmp and can introduce some problems.  The supplied 
+savectx/restorectx functions work like setjmp/longjmp, without the
+added complexity.
+
+Although the Linux kernel performs task switches on return from the
+timer interrupt handler, not directly from it, in this simulated environment,
+you will probably find that you have to call your context switch from
+your SIGVTALARM handler.  If so, be careful since the SIGVTALRM will be
+blocked by the kernel upon invoking your handler.  

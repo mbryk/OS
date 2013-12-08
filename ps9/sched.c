@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h> //memset
-#include <stdlib.h> //malloc
+#include <sys/mman.h> //mmap
 #include <math.h> // pow
+#include <stdlib.h> //abs
+
 void sched_init(void (*init_fn)()){
 	
 	/*** GLOBAL VARS ****/
@@ -27,37 +29,59 @@ void sched_init(void (*init_fn)()){
 	/**** MAKE INIT PROCESS *****/
 	struct sched_proc init;
 	sched_proc_init(&init);
+	memset(init.stack,0,STACK_SIZE);
+	init.state = SCHED_RUNNING;
 	current = &init;
 
 	/*** MAKE RUN QUEUE ****/
+	struct sched_waitq wq;
+	rq = &wq;
 	sched_waitq_init(rq);
 
-	initfn();
+	void *lim1;
+	void (*inn)();
+	lim1 = current->stack+STACK_SIZE;
+	__asm__(
+	   	"movq	%1,%%r8;	movq   %2, %%rbp; movq	%%rbp, %%rsp; movq	%%r8,%0"
+	   	:"=m" (init_fn):"m" (init_fn), "m" (lim1));
+	init_fn();
+	/*
+	if(savectx((&current->context))){
+		init_fn();
+	} else {
+		sched_switch();
+	}
+	*/
 }
 
 void sched_proc_init(struct sched_proc *p){
 	p->pid = ++pids;
 	p->nice = 0;
 	p->state = SCHED_READY;
-	p->vruntime = current->vruntime;
 
 	/*** MAKE STACK ****/
-	void *stack = malloc(STACK_SIZE);
-	if(stack==NULL) { perror("malloc failed"); exit(-1); }
-	adjstack();
-	p->stack = stack;
-	/*** /STACK ****/
-
+	void *newsp;
+	if((newsp=mmap(0,STACK_SIZE,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,0,0))==MAP_FAILED)
+	{
+		perror("mmap failed");
+	}
+	p->stack = newsp;
 	p->parent = NULL;
+	memset(p->children,0,sizeof *p->children);
+	p->childcount = 0;
 }
 
 int sched_fork(){
 	struct sched_proc new;
 	sched_proc_init(&new);
+	memcpy(new.stack,current->stack,STACK_SIZE);
 	new.parent = current;
-	heap_insert(rq,&new);
+	new.vruntime = current->vruntime;
 
+	heap_insert(rq,&new);
+	long diff = new.stack-current->stack;
 	if(savectx(&(new.context))){
+		adjstack(current->stack,current->stack+STACK_SIZE,diff);
 		return 0; // CHILD
 	}
 	if(savectx(&(current->context))){
@@ -68,7 +92,7 @@ int sched_fork(){
 }
 
 void sched_exit(int code){
-	if(current->parent->state == SCHED_WAITING){ // WAITQ? How should child know that parent is waiting.
+	if(current->parent->state == SCHED_WAITING){
 		current->state = SCHED_ZOMBIE;
 		current->parent->state = SCHED_READY;
 		heap_insert(rq, current->parent);
@@ -78,14 +102,32 @@ void sched_exit(int code){
 	sched_switch();
 }
 
-void sched_wait(int *exit_code){
+int sched_wait(int *exit_code){
+	//No Children
+	if(!current->childcount) 
+		return -1;
+
+	// Child already a Zombie
+	int i;
+	for(i=0;i<current->childcount;i++){
+		if(current->children[i]->state==SCHED_ZOMBIE){
+			struct sched_proc *child;
+			*exit_code = child->exit_code;
+			exited[totalexited++] = current;
+			current->children[i] = current->children[--current->childcount];
+			return 0;
+		}
+	}
+
+	// All children alive and well, Thank god. All Doctors and Lawyers. Except for one who went into education. Oy.
 	current->state = SCHED_WAITING;
 	if(savectx(&(current->context))){ // Wake up
 		struct sched_proc *child;
 		*exit_code = child->exit_code;
 		exited[totalexited++] = current;
 	} else { // Go to sleep
-		sched_switch();				
+		sched_switch();	
+		return 0;			
 	}
 }
 
@@ -212,7 +254,7 @@ void heap_percolateDown(struct sched_waitq *wq, int index){
  *could be commented out if needed.
  */
 
-void adjstack(void *lim0,void *lim1,unsigned long adj)
+void adjstack(void *lim0,void *lim1,long adj)
 {
  void **p;
  void *prev,*new;

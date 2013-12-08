@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <stdlib.h> // exit
 #include "sched.h"
 
 #define DELAY_FACTOR 29

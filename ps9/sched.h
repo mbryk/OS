@@ -20,6 +20,7 @@ struct sched_proc{
 	int state;
 	double vruntime;
 	struct sched_proc *parent; int exit_code;
+	struct sched_proc *children[SCHED_NPROC]; int childcount;
 	struct savectx context;
 };
 struct sched_waitq{
@@ -39,7 +40,7 @@ void sched_proc_init(struct sched_proc *p);
 void sched_waitq_init(struct sched_waitq*);
 int sched_fork();
 void sched_exit(int);
-void sched_wait(int*);
+int sched_wait(int*); 
 void sched_nice(int);
 int sched_getpid();
 int sched_getppid();
@@ -49,7 +50,7 @@ void sched_sleep(struct sched_waitq*);
 void sched_switch();
 void sched_tick(); // Sighandler
 
-void adjstack(void *lim0,void *lim1,unsigned long adj);
+void adjstack(void *lim0,void *lim1,long adj);
 void heap_insert(struct sched_waitq*, struct sched_proc *proc);
 void *heap_deleteMin(struct sched_waitq*);
 void heap_percolateUp(struct sched_waitq*, int);

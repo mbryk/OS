@@ -5,13 +5,16 @@
 #include <signal.h>
 #include <string.h> //memset
 #include <stdlib.h> //malloc
-
+#include <math.h> // pow
 void sched_init(void (*init_fn)()){
 	
-	/*** TIMER ****/
+	/*** GLOBAL VARS ****/
 	totalticks = 0; runticks = 0; 
 	quantumticks = 10; // TICKS PER PROCESS
+	pids = 0;
+	memset(exited,0, SCHED_NPROC);	
 
+	/**** TIMER *****/
 	struct itimerval timer;
 	struct timeval tv;
 	tv.tv_usec = 100; 
@@ -20,22 +23,23 @@ void sched_init(void (*init_fn)()){
 	timer.it_value = tv;
 	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 	signal(SIGVTALRM,sched_tick);
-	/*** /TIMER ****/
 
 	/**** MAKE INIT PROCESS *****/
 	struct sched_proc init;
 	sched_proc_init(&init);
 	current = &init;
-	/**** /MAKE INIT PROCESS*****/
 
+	/*** MAKE RUN QUEUE ****/
+	sched_waitq_init(rq);
+
+	initfn();
 }
 
 void sched_proc_init(struct sched_proc *p){
-	p->pid = current->pid + 1;
+	p->pid = ++pids;
 	p->nice = 0;
 	p->state = SCHED_READY;
 	p->vruntime = current->vruntime;
-	sched_calcWeights();
 
 	/*** MAKE STACK ****/
 	void *stack = malloc(STACK_SIZE);
@@ -47,32 +51,42 @@ void sched_proc_init(struct sched_proc *p){
 	p->parent = NULL;
 }
 
-void sched_calcWeights(){
-
-}
-
 int sched_fork(){
 	struct sched_proc new;
 	sched_proc_init(&new);
 	new.parent = current;
 	heap_insert(rq,&new);
 
-	if(savectx(new->context)){
+	if(savectx(&(new.context))){
 		return 0; // CHILD
 	}
-	if(savectx(current->context)){
-		return new->pid;
+	if(savectx(&(current->context))){
+		return new.pid;
 	} else {
 		sched_switch();
 	}
 }
 
 void sched_exit(int code){
-
+	if(current->parent->state == SCHED_WAITING){ // WAITQ? How should child know that parent is waiting.
+		current->state = SCHED_ZOMBIE;
+		current->parent->state = SCHED_READY;
+		heap_insert(rq, current->parent);
+	} else {
+		exited[totalexited++] = current;
+	}
+	sched_switch();
 }
 
 void sched_wait(int *exit_code){
-
+	current->state = SCHED_WAITING;
+	if(savectx(&(current->context))){ // Wake up
+		struct sched_proc *child;
+		*exit_code = child->exit_code;
+		exited[totalexited++] = current;
+	} else { // Go to sleep
+		sched_switch();				
+	}
 }
 
 void sched_nice(int niceval){
@@ -100,7 +114,7 @@ void sched_ps(){ // ABORT Sighandler
 void sched_sleep(struct sched_waitq *wq){
 	current->state = SCHED_SLEEPING;
 	heap_insert(wq, current);
-	if(!savectx(&(current->context))
+	if(!savectx(&(current->context)))
 		sched_switch();
 	// else, return from sleep command.
 }
@@ -117,7 +131,8 @@ void sched_switch(){
 
 void sched_tick(){ // Sighandler
 	totalticks++; runticks++;
-	current->vruntime += 1/current->weight;
+	double weight = pow(1.25,(double)current->nice);
+	current->vruntime += weight; // One Tick
 	if(runticks > quantumticks){
 		runticks = 0;
 		sched_switch();
@@ -152,7 +167,7 @@ void heap_insert(struct sched_waitq *wq, struct sched_proc *proc){
 void *heap_deleteMin(struct sched_waitq *wq){
 	if(!wq->filled){ fprintf(stderr, "Waitq is empty...?"); return NULL;}
 	void *ret = wq->queue[1];
-	wq->queue[1] = wq->queue[filled--];
+	wq->queue[1] = wq->queue[wq->filled--];
 	heap_percolateDown(wq, 1);
 	return ret;
 }
@@ -161,7 +176,7 @@ void heap_percolateUp(struct sched_waitq *wq, int index){
 	int changed = 0;
 	struct sched_proc *temp = wq->queue[index];
 
-	while((index>1) && (temp->vruntime < wq->queue[index/2]->key)){
+	while((index>1) && (temp->vruntime < wq->queue[index/2]->vruntime)){
 		wq->queue[index] = wq->queue[index/2];
 		index /= 2;
 		changed = 1;
@@ -174,10 +189,10 @@ void heap_percolateUp(struct sched_waitq *wq, int index){
 void heap_percolateDown(struct sched_waitq *wq, int index){
 	struct sched_proc *temp = wq->queue[index];
 	int child;
-	for(; index*2 <= wq->qtot; index=child){
+	for(; index*2 <= wq->filled; index=child){
 		child = index*2; // Next Layer
 		
-		if(child != wq->qtot && wq->queue[child+1]->vruntime < wq->queue[child]->vruntime) // Look down both nodes
+		if(child != wq->filled && wq->queue[child+1]->vruntime < wq->queue[child]->vruntime) // Look down both nodes
 			child++;
 
 		if(wq->queue[child]->vruntime < temp->vruntime) {
@@ -197,7 +212,7 @@ void heap_percolateDown(struct sched_waitq *wq, int index){
  *could be commented out if needed.
  */
 
-adjstack(void *lim0,void *lim1,unsigned long adj)
+void adjstack(void *lim0,void *lim1,unsigned long adj)
 {
  void **p;
  void *prev,*new;

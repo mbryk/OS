@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <signal.h>
+#include <sys/types.h>
 #include "sched.h"
 
 #define DELAY_FACTOR 29
@@ -47,6 +48,7 @@ child_fn1()
 parent_fn()
 {
  int y,p;
+ pid_t pid = getpid();
 	fprintf(stderr,"Wow, made it to parent, stkaddr=%p\n",&y);
 	switch(sched_fork())
 	{
@@ -58,6 +60,8 @@ parent_fn()
 		fprintf(stderr,"!!BUG!! at %s:%d\n",__FILE__,__LINE__);
 		return;
 	 default:
+	 	kill(pid,SIGUSR1);//wq1
+	 	kill(pid,SIGUSR2);//wq1
 		while ((p=sched_wait(&y))>0)
 			fprintf(stderr,"Child pid %d return code %d\n",p,y);
 		return;

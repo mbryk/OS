@@ -2,23 +2,24 @@
 #ifndef SCHED_H
 #define SCHED_H
 #include <sys/types.h>
-#include "savectx.h"
+#include "savectx64.h"
 
 #define SCHED_NPROC		256
 #define SCHED_READY		0
 #define SCHED_RUNNING	1
 #define SCHED_SLEEPING	2
-#define SCHED_ZOMBIE	3
+#define SCHED_WAITING	3
+#define SCHED_ZOMBIE	4
 
 #define STACK_SIZE		65536 // 64K
 
 struct sched_proc{
 	int pid;
-	int nice; int weight;
+	int nice;
 	void *stack;
 	int state;
-	int vruntime;
-	struct sched_proc *parent;
+	double vruntime;
+	struct sched_proc *parent; int exit_code;
 	struct savectx context;
 };
 struct sched_waitq{
@@ -30,8 +31,11 @@ struct sched_waitq{
 int totalticks, runticks, quantumticks;
 struct sched_proc *current;
 struct sched_waitq *rq;
+int pids; int totalexited;
+struct sched_proc *exited[SCHED_NPROC];
 
 void sched_init(void (*init_fn)());
+void sched_proc_init(struct sched_proc *p);
 void sched_waitq_init(struct sched_waitq*);
 int sched_fork();
 void sched_exit(int);
@@ -45,10 +49,10 @@ void sched_sleep(struct sched_waitq*);
 void sched_switch();
 void sched_tick(); // Sighandler
 
-adjstack(void *lim0,void *lim1,unsigned long adj);
-void heap_insert(struct sched_waitq*, void *proc, int val);
+void adjstack(void *lim0,void *lim1,unsigned long adj);
+void heap_insert(struct sched_waitq*, struct sched_proc *proc);
 void *heap_deleteMin(struct sched_waitq*);
-void heap_percolateUp(int);
-void heap_percolateDown(int);
+void heap_percolateUp(struct sched_waitq*, int);
+void heap_percolateDown(struct sched_waitq*, int);
 
 #endif

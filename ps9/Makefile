@@ -1,14 +1,14 @@
-test: sched.o savectx.o test.o
-	gcc -m32 -o test sched.o savectx.o test.o
+test: sched.o savectx64.o test.o
+	gcc -o test sched.o savectx64.o test.o
 
 sched.o: sched.c sched.h
-	gcc -c -g -m32 sched.c
+	gcc -c -g sched.c
 
-savectx.o: savectx.c savectx.h jmpbuf-offsets.h
-	gcc -c -g -m32 savectx.o
+savectx64.o: savectx64.c savectx64.h jmpbuf-offsets64.h
+	gcc -c -g savectx64.c
 
 test.o: test.c
-	gcc -c -g -m32 test.c
+	gcc -c -g test.c
 
 clean:
 	rm -f *.out *.o *.stackdump *~

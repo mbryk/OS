@@ -19,7 +19,7 @@ void sched_init(void (*init_fn)()){
 	/**** TIMER *****/
 	struct itimerval timer;
 	struct timeval tv;
-	tv.tv_usec = 100; 
+	tv.tv_usec = 10; 
 	tv.tv_sec = 0;
 	timer.it_interval = tv;
 	timer.it_value = tv;
@@ -74,14 +74,18 @@ void sched_proc_init(struct sched_proc *p){
 int sched_fork(){
 	struct sched_proc new;
 	sched_proc_init(&new);
-	memcpy(new.stack,current->stack,STACK_SIZE);
+	//memcpy(new.stack,current->stack,STACK_SIZE);
 	new.parent = current;
 	new.vruntime = current->vruntime;
 
 	heap_insert(rq,&new);
 	long diff = new.stack-current->stack;
 	if(savectx(&(new.context))){
-		adjstack(current->stack,current->stack+STACK_SIZE,diff);
+		void *bp;
+		memcpy(current->stack,current->parent->stack,STACK_SIZE);
+		__asm__("movq   %%rbp,%0;":"=m" (bp));
+		bp += diff;
+		__asm__("movq   %0, %%rbp; movq %%rbp, %%rsp;"::"m" (bp));
 		return 0; // CHILD
 	}
 	if(savectx(&(current->context))){
@@ -172,6 +176,7 @@ void sched_switch(){
 }
 
 void sched_tick(){ // Sighandler
+	fprintf(stderr, "Tick ");
 	totalticks++; runticks++;
 	double weight = pow(1.25,(double)current->nice);
 	current->vruntime += weight; // One Tick
@@ -256,21 +261,19 @@ void heap_percolateDown(struct sched_waitq *wq, int index){
 
 void adjstack(void *lim0,void *lim1,long adj)
 {
- void **p;
- void *prev,*new;
-#ifdef _LP64
+ void *bp;
        __asm__(
-	"movq   %%rbp,%0"
-	:"=m" (p));
-#else
-       __asm__(
-	"movl   %%ebp,%0"
-	:"=m" (p));
-#endif
+	"movq   %%rbp,%0;"
+	:"=m" (bp));
+       bp += adj;
+ 		__asm__(
+   	"movq   %0, %%rbp; movq %%rbp, %%rsp;"
+   	::"m" (bp));
+
 	/* Now current bp (for adjstack fn) is in p */
 	/* Unwind stack to get to saved ebp addr of caller */
 	/* then begin adjustment process */
-	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
+/*	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
 	prev=*p;
 	p= prev + adj;
 	for(;;)
@@ -288,4 +291,5 @@ void adjstack(void *lim0,void *lim1,long adj)
 				p,*p);
 		p=new;
 	}
+	*/
 }

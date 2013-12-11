@@ -30,6 +30,7 @@ struct sched_waitq{
 
 /*** Scheduler Variables ***/
 int totalticks, runticks, quantumticks;
+sigset_t set;
 struct sched_proc *current;
 struct sched_waitq *rq;
 int pids; int totalexited;

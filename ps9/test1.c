@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <stdlib.h> // exit
 #include "sched.h"
+#include <time.h>
 
 #define DELAY_FACTOR 29
 struct sched_waitq wq1,wq2;
@@ -35,12 +36,17 @@ child_fn1()
 {
  int y;
 	fprintf(stderr,"Start pass1, child_fn1 &y=%p\n",&y);
-	for(y=1;y<1<<DELAY_FACTOR;y++)
+	
+	//for(y=1;y<1<<DELAY_FACTOR;y++)
+	time_t t = time(0);
+	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 1,child_fn1 y=%d\n",y);
 	sched_sleep(&wq1);
 	fprintf(stderr,"Resuming child_fn1\n");
-	for(y=1;y<1<<DELAY_FACTOR;y++)
+//	for(y=1;y<1<<DELAY_FACTOR;y++)
+	t = time(0);
+	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 2,child_fn1 y=%d\n",y);
 	sched_exit(22);
@@ -74,12 +80,16 @@ child_fn2()
  int y;
 	sched_nice(4);
 	fprintf(stderr,"Start pass1, child_fn2 &y=%p\n",&y);
-	for(y=0;y<1<<DELAY_FACTOR;y++)
+//	for(y=0;y<1<<DELAY_FACTOR;y++)
+	time_t t = time(0);
+	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 1,child_fn2 y=%d\n",y);
 	sched_sleep(&wq2);
 	fprintf(stderr,"Resuming child_fn2\n");
-	for(y=0;y<1<<DELAY_FACTOR;y++)
+//	for(y=0;y<1<<DELAY_FACTOR;y++)
+	t = time(0);
+	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 2,child_fn2 y=%d\n",y);
 	
@@ -87,6 +97,7 @@ child_fn2()
 
 wakeup_handler(int sig)
 {
+	fprintf(stderr,"Wakeup Handler\n");
 	if (sig==SIGUSR1)
 		sched_wakeup(&wq1);
 	else
@@ -95,6 +106,7 @@ wakeup_handler(int sig)
 
 abrt_handler(int sig)
 {
+	fprintf(stderr,"Abort Handler\n");
 	sched_ps();
 }
 

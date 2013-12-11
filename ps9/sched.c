@@ -9,41 +9,44 @@
 #include <stdlib.h> //abs
 
 void sched_init(void (*init_fn)()){
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	/*** GLOBAL VARS ****/
 	totalticks = 0; runticks = 0; 
 	quantumticks = 10; // TICKS PER PROCESS
 	pids = 0;
-	memset(exited,0, SCHED_NPROC);	
+	totalexited = 0;
+	memset(exited,0, SCHED_NPROC*sizeof(struct sched_proc*));	
 
 	/**** TIMER *****/
-	struct itimerval timer;
+	struct itimerval *timer = malloc(sizeof(struct itimerval));
 	struct timeval tv;
 	tv.tv_usec = 10; 
 	tv.tv_sec = 0;
-	timer.it_interval = tv;
-	timer.it_value = tv;
-	setitimer(ITIMER_VIRTUAL, &timer, NULL);
-	signal(SIGVTALRM,sched_tick);
+	timer->it_interval = tv;
+	timer->it_value = tv;
 
 	/**** MAKE INIT PROCESS *****/
-	struct sched_proc init;
-	sched_proc_init(&init);
-	memset(init.stack,0,STACK_SIZE);
-	init.state = SCHED_RUNNING;
-	current = &init;
+	struct sched_proc *init = malloc(sizeof(struct sched_proc));
+	sched_proc_init(init);
+	memset(init->stack,0,STACK_SIZE);
+	init->state = SCHED_RUNNING;
+	current = init;
 
 	/*** MAKE RUN QUEUE ****/
-	struct sched_waitq wq;
-	rq = &wq;
+	rq = malloc(sizeof(struct sched_waitq));
 	sched_waitq_init(rq);
 
+	setitimer(ITIMER_VIRTUAL, timer, NULL);
+	signal(SIGVTALRM,sched_tick);
 	if(!savectx((&current->context))){
 		current->context.regs[JB_SP] = current->stack+STACK_SIZE;
 		current->context.regs[JB_BP] = current->stack+STACK_SIZE;
 		current->context.regs[JB_PC] = init_fn;
 		sched_switch();
 	}
-	
 }
 
 void sched_proc_init(struct sched_proc *p){
@@ -59,44 +62,37 @@ void sched_proc_init(struct sched_proc *p){
 	}
 	p->stack = newsp;
 	p->parent = NULL;
-	memset(p->children,0,sizeof *p->children);
+	memset(p->children,0,SCHED_NPROC*sizeof(struct sched_proc*));
 	p->childcount = 0;
 }
 
 int sched_fork(){
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
-	struct sched_proc new;
-	sched_proc_init(&new);
-	new.parent = current;
-	new.vruntime = current->vruntime;
+	struct sched_proc *new = malloc(sizeof(struct sched_proc));
+	sched_proc_init(new);
+	new->parent = current;
+	new->vruntime = current->vruntime;
+	current->children[current->childcount++] =  new;
 
-	heap_insert(rq,&new);
-	long diff = new.stack-current->stack;
-	memcpy(new.stack,current->stack,STACK_SIZE);
+	heap_insert(rq,new);
+	long diff = new->stack-current->stack;
+	memcpy(new->stack,current->stack,STACK_SIZE);
 	if(savectx(&(current->context))){
-		return new.pid;
+		return new->pid;
 	} else {
-		if(savectx(&(new.context))){
+		if(savectx(&(new->context))){
 			return 0;
 		} else {
 			//adjstack(new.stack,new.stack+STACK_SIZE,diff);
-			new.context.regs[JB_SP] += diff;
-			new.context.regs[JB_BP] += diff;
+			new->context.regs[JB_SP] += diff;
+			new->context.regs[JB_BP] += diff;
 		}
 		sched_switch();
 	}
-
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_exit(int code){
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	if(current->parent->state == SCHED_WAITING){
@@ -107,19 +103,16 @@ void sched_exit(int code){
 		exited[totalexited++] = current;
 	}
 	sched_switch();
-
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 int sched_wait(int *exit_code){
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	//No Children
-	if(!current->childcount) 
+	if(!current->childcount){
+		sigprocmask(SIG_UNBLOCK,&set,NULL);
 		return -1;
+	}
 
 	// Child already a Zombie
 	int i;
@@ -129,6 +122,7 @@ int sched_wait(int *exit_code){
 			*exit_code = child->exit_code;
 			exited[totalexited++] = current;
 			current->children[i] = current->children[--current->childcount];
+			sigprocmask(SIG_UNBLOCK,&set,NULL);
 			return 0;
 		}
 	}
@@ -143,14 +137,9 @@ int sched_wait(int *exit_code){
 	} else { // Go to sleep
 		sched_switch();	
 	}
-
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_nice(int niceval){
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	if(niceval>19) niceval = 19;
@@ -177,9 +166,6 @@ void sched_ps(){ // ABORT Sighandler
 }
 
 void sched_sleep(struct sched_waitq *wq){
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	current->state = SCHED_SLEEPING;
@@ -187,8 +173,6 @@ void sched_sleep(struct sched_waitq *wq){
 	if(!savectx(&(current->context)))
 		sched_switch();
 	// else, return from sleep command.
-
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_switch(){
@@ -199,13 +183,11 @@ void sched_switch(){
 	if(rq->filled==1) current = rq->queue[rq->filled--];
 	else	current = heap_deleteMin(rq);
 	current->state = SCHED_RUNNING;
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 	restorectx(&(current->context),1);
 }
 
 void sched_tick(){ // Sighandler
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	fprintf(stderr, "Tick ");
@@ -214,16 +196,13 @@ void sched_tick(){ // Sighandler
 	current->vruntime += weight; // One Tick
 	if(runticks > quantumticks){
 		runticks = 0;
-		sched_switch();
-	}
-
-	sigprocmask(SIG_UNBLOCK,&set,NULL);
+		if(!savectx(&(current->context)))
+			sched_switch();
+	} else
+		sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_wakeup(struct sched_waitq *wq){ // ON EVENT Defined by Wait Queue
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	int i;
@@ -239,7 +218,7 @@ void sched_wakeup(struct sched_waitq *wq){ // ON EVENT Defined by Wait Queue
 
 void sched_waitq_init(struct sched_waitq *wq){
 	wq->filled = 0;
-	memset(wq->queue,0, SCHED_NPROC);
+	memset(wq->queue,0, SCHED_NPROC*sizeof(struct sched_proc*));
 }
 
 void heap_insert(struct sched_waitq *wq, struct sched_proc *proc){

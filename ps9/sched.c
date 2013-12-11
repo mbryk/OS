@@ -9,7 +9,6 @@
 #include <stdlib.h> //abs
 
 void sched_init(void (*init_fn)()){
-	
 	/*** GLOBAL VARS ****/
 	totalticks = 0; runticks = 0; 
 	quantumticks = 10; // TICKS PER PROCESS
@@ -38,20 +37,13 @@ void sched_init(void (*init_fn)()){
 	rq = &wq;
 	sched_waitq_init(rq);
 
-	void *lim1;
-	void (*inn)();
-	lim1 = current->stack+STACK_SIZE;
-	__asm__(
-	   	"movq	%1,%%r8;	movq   %2, %%rbp; movq	%%rbp, %%rsp; movq	%%r8,%0"
-	   	:"=m" (init_fn):"m" (init_fn), "m" (lim1));
-	init_fn();
-	/*
-	if(savectx((&current->context))){
-		init_fn();
-	} else {
+	if(!savectx((&current->context))){
+		current->context.regs[JB_SP] = current->stack+STACK_SIZE;
+		current->context.regs[JB_BP] = current->stack+STACK_SIZE;
+		current->context.regs[JB_PC] = init_fn;
 		sched_switch();
 	}
-	*/
+	
 }
 
 void sched_proc_init(struct sched_proc *p){
@@ -72,30 +64,41 @@ void sched_proc_init(struct sched_proc *p){
 }
 
 int sched_fork(){
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	struct sched_proc new;
 	sched_proc_init(&new);
-	//memcpy(new.stack,current->stack,STACK_SIZE);
 	new.parent = current;
 	new.vruntime = current->vruntime;
 
 	heap_insert(rq,&new);
 	long diff = new.stack-current->stack;
-	if(savectx(&(new.context))){
-		void *bp;
-		memcpy(current->stack,current->parent->stack,STACK_SIZE);
-		__asm__("movq   %%rbp,%0;":"=m" (bp));
-		bp += diff;
-		__asm__("movq   %0, %%rbp; movq %%rbp, %%rsp;"::"m" (bp));
-		return 0; // CHILD
-	}
+	memcpy(new.stack,current->stack,STACK_SIZE);
 	if(savectx(&(current->context))){
 		return new.pid;
 	} else {
+		if(savectx(&(new.context))){
+			return 0;
+		} else {
+			//adjstack(new.stack,new.stack+STACK_SIZE,diff);
+			new.context.regs[JB_SP] += diff;
+			new.context.regs[JB_BP] += diff;
+		}
 		sched_switch();
 	}
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_exit(int code){
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	if(current->parent->state == SCHED_WAITING){
 		current->state = SCHED_ZOMBIE;
 		current->parent->state = SCHED_READY;
@@ -104,9 +107,16 @@ void sched_exit(int code){
 		exited[totalexited++] = current;
 	}
 	sched_switch();
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 int sched_wait(int *exit_code){
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	//No Children
 	if(!current->childcount) 
 		return -1;
@@ -129,16 +139,25 @@ int sched_wait(int *exit_code){
 		struct sched_proc *child;
 		*exit_code = child->exit_code;
 		exited[totalexited++] = current;
+		return 0;
 	} else { // Go to sleep
 		sched_switch();	
-		return 0;			
 	}
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_nice(int niceval){
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	if(niceval>19) niceval = 19;
 	else if(niceval<-20) niceval = -20;
 	current->nice = niceval;
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 int sched_getpid(){
@@ -158,11 +177,18 @@ void sched_ps(){ // ABORT Sighandler
 }
 
 void sched_sleep(struct sched_waitq *wq){
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	current->state = SCHED_SLEEPING;
 	heap_insert(wq, current);
 	if(!savectx(&(current->context)))
 		sched_switch();
 	// else, return from sleep command.
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_switch(){
@@ -170,12 +196,18 @@ void sched_switch(){
 		current->state = SCHED_READY;
 		heap_insert(rq, current);
 	}
-	current = heap_deleteMin(rq);
+	if(rq->filled==1) current = rq->queue[rq->filled--];
+	else	current = heap_deleteMin(rq);
 	current->state = SCHED_RUNNING;
 	restorectx(&(current->context),1);
 }
 
 void sched_tick(){ // Sighandler
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	fprintf(stderr, "Tick ");
 	totalticks++; runticks++;
 	double weight = pow(1.25,(double)current->nice);
@@ -184,9 +216,16 @@ void sched_tick(){ // Sighandler
 		runticks = 0;
 		sched_switch();
 	}
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_wakeup(struct sched_waitq *wq){ // ON EVENT Defined by Wait Queue
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
+	sigprocmask(SIG_BLOCK,&set,NULL);
+
 	int i;
 	struct sched_proc *p;
 	for(i=wq->filled;i>0;i++){
@@ -194,6 +233,8 @@ void sched_wakeup(struct sched_waitq *wq){ // ON EVENT Defined by Wait Queue
 		p->state = SCHED_READY;
 		heap_insert(rq,p);
 	}
+
+	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
 void sched_waitq_init(struct sched_waitq *wq){
@@ -261,19 +302,21 @@ void heap_percolateDown(struct sched_waitq *wq, int index){
 
 void adjstack(void *lim0,void *lim1,long adj)
 {
- void *bp;
+ void **p;
+ void *prev,*new;
+#ifdef _LP64
        __asm__(
-	"movq   %%rbp,%0;"
-	:"=m" (bp));
-       bp += adj;
- 		__asm__(
-   	"movq   %0, %%rbp; movq %%rbp, %%rsp;"
-   	::"m" (bp));
-
+	"movq   %%rbp,%0"
+	:"=m" (p));
+#else
+       __asm__(
+	"movl   %%ebp,%0"
+	:"=m" (p));
+#endif
 	/* Now current bp (for adjstack fn) is in p */
 	/* Unwind stack to get to saved ebp addr of caller */
 	/* then begin adjustment process */
-/*	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
+	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
 	prev=*p;
 	p= prev + adj;
 	for(;;)
@@ -291,5 +334,7 @@ void adjstack(void *lim0,void *lim1,long adj)
 				p,*p);
 		p=new;
 	}
-	*/
+	__asm__(
+		"movq	%0,%%rbp"::"m" (p));
 }
+		

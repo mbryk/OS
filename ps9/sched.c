@@ -8,7 +8,7 @@
 #include <math.h> // pow
 #include <stdlib.h> //abs
 
-void sched_init(void (*init_fn)()){
+sched_init(void (*init_fn)()){
 	sigemptyset(&set);
 	sigaddset(&set,SIGABRT);sigaddset(&set,SIGVTALRM);sigaddset(&set,SIGUSR1);sigaddset(&set,SIGUSR2);
 	sigprocmask(SIG_BLOCK,&set,NULL);
@@ -49,7 +49,7 @@ void sched_init(void (*init_fn)()){
 	}
 }
 
-void sched_proc_init(struct sched_proc *p){
+sched_proc_init(struct sched_proc *p){
 	p->pid = ++pids;
 	p->nice = 0;
 	p->state = SCHED_READY;
@@ -91,7 +91,7 @@ int sched_fork(){
 	}
 }
 
-void sched_exit(int code){
+sched_exit(int code){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	if(current->parent->state == SCHED_WAITING){
@@ -143,7 +143,7 @@ int sched_wait(int *exit_code){
 	sched_switch();	
 }
 
-void sched_nice(int niceval){
+sched_nice(int niceval){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	if(niceval>19) niceval = 19;
@@ -165,11 +165,11 @@ int sched_gettick(){
 	return totalticks;
 }
 
-void sched_ps(){
+sched_ps(){
 	fprintf(stderr,"UHOH. ABORT ABORT!\n");
 }
 
-void sched_sleep(struct sched_waitq *wq){
+sched_sleep(struct sched_waitq *wq){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	current->state = SCHED_SLEEPING;
@@ -178,7 +178,7 @@ void sched_sleep(struct sched_waitq *wq){
 		sched_switch();
 }
 
-void sched_switch(){
+sched_switch(){
 	if(current->state==SCHED_RUNNING){
 		current->state = SCHED_READY;
 		heap_insert(rq, current);
@@ -190,10 +190,9 @@ void sched_switch(){
 	restorectx(&(current->context),1);
 }
 
-void sched_tick(){
+sched_tick(){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
-	fprintf(stderr, "Tick ");
 	totalticks++; runticks++;
 	double weight = pow(1.25,(double)current->nice);
 	current->vruntime += weight;
@@ -205,7 +204,7 @@ void sched_tick(){
 		sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
-void sched_wakeup(struct sched_waitq *wq){
+sched_wakeup(struct sched_waitq *wq){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	int i;
@@ -219,7 +218,7 @@ void sched_wakeup(struct sched_waitq *wq){
 	sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
-void sched_waitq_init(struct sched_waitq *wq){
+sched_waitq_init(struct sched_waitq *wq){
 	wq->filled = 0;
 	memset(wq->queue,0, SCHED_NPROC*sizeof(struct sched_proc*));
 }

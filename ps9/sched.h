@@ -36,20 +36,20 @@ struct sched_waitq *rq;
 int pids; int totalexited;
 struct sched_proc *exited[SCHED_NPROC];
 
-void sched_init(void (*init_fn)());
-void sched_proc_init(struct sched_proc *p);
-void sched_waitq_init(struct sched_waitq*);
+sched_init(void (*init_fn)());
+sched_proc_init(struct sched_proc *p);
+sched_waitq_init(struct sched_waitq*);
 int sched_fork();
-void sched_exit(int);
+sched_exit(int);
 int sched_wait(int*); 
-void sched_nice(int);
+sched_nice(int);
 int sched_getpid();
 int sched_getppid();
 int sched_gettick();
-void sched_ps(); // Sighandler
-void sched_sleep(struct sched_waitq*);
-void sched_switch();
-void sched_tick(); // Sighandler
+sched_ps(); // Sighandler
+sched_sleep(struct sched_waitq*);
+sched_switch();
+sched_tick(); // Sighandler
 
 void adjstack(void *lim0,void *lim1,long adj);
 void heap_insert(struct sched_waitq*, struct sched_proc *proc);

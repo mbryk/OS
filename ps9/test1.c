@@ -2,17 +2,16 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <stdlib.h> // exit
-#include "sched.h"
 #include <time.h>
+#include "sched.h"
 
-#define DELAY_FACTOR 29
 struct sched_waitq wq1,wq2;
 
 init_fn()
 {
- 	int x;
 	sched_waitq_init(&wq1);
 	sched_waitq_init(&wq2);
+	int x;
 	fprintf(stderr,"Hooray made it to init_fn, stkaddr %p\n",&x);
 	switch (sched_fork())
 	{
@@ -20,86 +19,72 @@ init_fn()
 		fprintf(stderr,"fork failed\n");
 		return -1;
 	 case 0:
-		fprintf(stderr,"<<in child addr %p>>\n",&x);
 		child_fn1();
 		fprintf(stderr,"!!BUG!! at %s:%d\n",__FILE__,__LINE__);
 		return 0;
 	 default:
-		fprintf(stderr,"<<in parent addr %p>>\n",&x);
 		parent_fn();
 		break;
 	}
+	fprintf(stderr,"DONE!\n");
 	exit(0);
 }
 
 child_fn1()
 {
- int y;
-	fprintf(stderr,"Start pass1, child_fn1 &y=%p\n",&y);
-	
-	/*for(y=1;y<1<<DELAY_FACTOR;y++)
-	time_t t = time(0);
-	while(time(0)-t < 10)
-		;
-	fprintf(stderr,"Done pass 1,child_fn1 y=%d\n",y);
-	*/
+	int x;
+	fprintf(stderr,"<<in child 1 addr %p>>\n",&x);
+	fprintf(stderr,"Child 1 - Go to sleep on wq1\n");
 	sched_sleep(&wq1);
-	fprintf(stderr,"Resuming child_fn1\n");
-//	for(y=1;y<1<<DELAY_FACTOR;y++)
+	fprintf(stderr,"Child 1 - Woken Up\n");
 	time_t t = time(0);
 	while(time(0)-t < 1)
 		;
-	fprintf(stderr,"Done pass 2,child_fn1 y=%d\n",y);
+	fprintf(stderr,"Child 1 - exit(22)\n");
 	sched_exit(22);
 }
 
 parent_fn()
 {
- int y,p;
- pid_t pid = getpid();
-	fprintf(stderr,"Wow, made it to parent, stkaddr=%p\n",&y);
+ 	int y,p;
+ 	pid_t pid = getpid();
+ 	fprintf(stderr,"<<in parent addr %p>>\n",&y);
 	switch(sched_fork())
 	{
-	 case -1:fprintf(stderr,"Fork failed\n");
+	 case -1:
+	 	fprintf(stderr,"Fork failed\n");
 		return;
 	 case 0:
 		child_fn2();
+		fprintf(stderr,"Child 2 - exit(11)\n");
 		sched_exit(11);
 		fprintf(stderr,"!!BUG!! at %s:%d\n",__FILE__,__LINE__);
 		return;
 	 default:
+	 	fprintf(stderr,"Parent - Wake up wq1 & wq2\n");
 	 	kill(pid,SIGUSR1);//wq1
-	 	kill(pid,SIGUSR2);//wq1
+	 	kill(pid,SIGUSR2);//wq2
 		while ((p=sched_wait(&y))==0)
-			fprintf(stderr,"Child pid %d return code %d\n",p,y);
+			fprintf(stderr,"Waited for child pid %d return code %d\n",p,y);
 		return;
 	}
 }
 
 child_fn2()
 {
- int y;
 	sched_nice(4);
-	fprintf(stderr,"Start pass1, child_fn2 &y=%p\n",&y);
-/*	for(y=0;y<1<<DELAY_FACTOR;y++)
-	time_t t = time(0);
-	while(time(0)-t < 10)
-		;
-	fprintf(stderr,"Done pass 1,child_fn2 y=%d\n",y);
-	*/
+	int x;
+	fprintf(stderr,"<<in child 2 addr %p>>\n",&x);
+	fprintf(stderr,"Child 2 - Go to sleep on wq2\n");
 	sched_sleep(&wq2);
-	fprintf(stderr,"Resuming child_fn2\n");
-//	for(y=0;y<1<<DELAY_FACTOR;y++)
+	fprintf(stderr,"Child 2 - Woken Up\n");
 	time_t t = time(0);
 	while(time(0)-t < 1)
 		;
-	fprintf(stderr,"Done pass 2,child_fn2 y=%d\n",y);
-	
 }
 
 wakeup_handler(int sig)
 {
-	fprintf(stderr,"Wakeup Handler\n");
 	if (sig==SIGUSR1)
 		sched_wakeup(&wq1);
 	else
@@ -108,7 +93,6 @@ wakeup_handler(int sig)
 
 abrt_handler(int sig)
 {
-	fprintf(stderr,"Abort Handler\n");
 	sched_ps();
 }
 
@@ -117,9 +101,7 @@ main()
  	struct sigaction sa;
 	fprintf(stderr,"Starting\n");
 	sa.sa_flags=0;
-	// Handle USR1 and USR2 to wakeup_handler
 	sa.sa_handler=wakeup_handler; sigemptyset(&sa.sa_mask); sigaction(SIGUSR1,&sa,NULL); sigaction(SIGUSR2,&sa,NULL);
-	// Handle ABORT to abrt_handler
 	sa.sa_handler=abrt_handler;	sigaction(SIGABRT,&sa,NULL); 
 
 	sched_init(init_fn);

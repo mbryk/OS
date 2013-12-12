@@ -84,7 +84,6 @@ int sched_fork(){
 		if(savectx(&(new->context))){
 			return 0;
 		} else {
-			//adjstack(new.stack,new.stack+STACK_SIZE,diff);
 			new->context.regs[JB_SP] += diff;
 			new->context.regs[JB_BP] += diff;
 		}
@@ -97,7 +96,7 @@ void sched_exit(int code){
 
 	if(current->parent->state == SCHED_WAITING){
 		current->state = SCHED_ZOMBIE;
-		current->parent->state = SCHED_READY;
+		current->exit_code = code;
 		heap_insert(rq, current->parent);
 	} else {
 		exited[totalexited++] = current;
@@ -118,9 +117,9 @@ int sched_wait(int *exit_code){
 	int i;
 	for(i=0;i<current->childcount;i++){
 		if(current->children[i]->state==SCHED_ZOMBIE){
-			struct sched_proc *child;
+			struct sched_proc *child = current->children[i];
 			*exit_code = child->exit_code;
-			exited[totalexited++] = current;
+			exited[totalexited++] = child;
 			current->children[i] = current->children[--current->childcount];
 			sigprocmask(SIG_UNBLOCK,&set,NULL);
 			return 0;
@@ -129,14 +128,19 @@ int sched_wait(int *exit_code){
 
 	// All children alive and well, Thank god. All Doctors and Lawyers. Except for one who went into education. Oy.
 	current->state = SCHED_WAITING;
-	if(savectx(&(current->context))){ // Wake up
-		struct sched_proc *child;
-		*exit_code = child->exit_code;
-		exited[totalexited++] = current;
-		return 0;
-	} else { // Go to sleep
-		sched_switch();	
+	while(savectx(&(current->context))){ // Just in case none of them are zombies and I was woken up. Should never happen.
+		for(i=0;i<current->childcount;i++){
+			if(current->children[i]->state==SCHED_ZOMBIE){
+				struct sched_proc *child = current->children[i];
+				*exit_code = child->exit_code;
+				exited[totalexited++] = child;
+				current->children[i] = current->children[--current->childcount];
+				current->state = SCHED_RUNNING;
+				return 0;
+			}
+		}
 	}
+	sched_switch();	
 }
 
 void sched_nice(int niceval){
@@ -161,7 +165,7 @@ int sched_gettick(){
 	return totalticks;
 }
 
-void sched_ps(){ // ABORT Sighandler
+void sched_ps(){
 	fprintf(stderr,"UHOH. ABORT ABORT!\n");
 }
 
@@ -172,7 +176,6 @@ void sched_sleep(struct sched_waitq *wq){
 	heap_insert(wq, current);
 	if(!savectx(&(current->context)))
 		sched_switch();
-	// else, return from sleep command.
 }
 
 void sched_switch(){
@@ -187,13 +190,13 @@ void sched_switch(){
 	restorectx(&(current->context),1);
 }
 
-void sched_tick(){ // Sighandler
+void sched_tick(){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	fprintf(stderr, "Tick ");
 	totalticks++; runticks++;
 	double weight = pow(1.25,(double)current->nice);
-	current->vruntime += weight; // One Tick
+	current->vruntime += weight;
 	if(runticks > quantumticks){
 		runticks = 0;
 		if(!savectx(&(current->context)))
@@ -202,12 +205,12 @@ void sched_tick(){ // Sighandler
 		sigprocmask(SIG_UNBLOCK,&set,NULL);
 }
 
-void sched_wakeup(struct sched_waitq *wq){ // ON EVENT Defined by Wait Queue
+void sched_wakeup(struct sched_waitq *wq){
 	sigprocmask(SIG_BLOCK,&set,NULL);
 
 	int i;
 	struct sched_proc *p;
-	for(i=wq->filled;i>0;i++){
+	for(i=wq->filled;i>0;i--){
 		p = wq->queue[wq->filled--];
 		p->state = SCHED_READY;
 		heap_insert(rq,p);
@@ -224,7 +227,6 @@ void sched_waitq_init(struct sched_waitq *wq){
 void heap_insert(struct sched_waitq *wq, struct sched_proc *proc){
 	int nextPos = ++wq->filled;
 	
-	// Just checking. Should never be able to happen.
 	if(nextPos > SCHED_NPROC) {fprintf(stderr,"Uhoh. Queue too full\n"); exit(-1);}
 
 	wq->queue[nextPos] = proc;
@@ -268,52 +270,3 @@ void heap_percolateDown(struct sched_waitq *wq, int index){
 	}
 	wq->queue[index] = temp;
 }
-
-
-/*adjstack takes a stack which is bounded by addresses lim0 and lim1
- *and adjusts the saved frame pointers (ebp) by adj bytes.
- *It is intended to be used in conjunction with sched_fork to fix
- *the child's stack, and should be called from the parent task, after
- *having allocated the child's stack and copying into it the contents of
- *the entire parent's stack.  There are some debugging fprintfs that
- *could be commented out if needed.
- */
-
-void adjstack(void *lim0,void *lim1,long adj)
-{
- void **p;
- void *prev,*new;
-#ifdef _LP64
-       __asm__(
-	"movq   %%rbp,%0"
-	:"=m" (p));
-#else
-       __asm__(
-	"movl   %%ebp,%0"
-	:"=m" (p));
-#endif
-	/* Now current bp (for adjstack fn) is in p */
-	/* Unwind stack to get to saved ebp addr of caller */
-	/* then begin adjustment process */
-	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
-	prev=*p;
-	p= prev + adj;
-	for(;;)
-	{
-		prev=*p;
-		new=prev+adj;
-		if (new<lim0 || new>lim1)
-		{
-			fprintf(stderr,"Enough already, saved BP @%p is %p\n",
-						p,prev);
-			break;
-		}
-		*p=new;
-		fprintf(stderr,"Adjusted saved bp @%p to %p\n",
-				p,*p);
-		p=new;
-	}
-	__asm__(
-		"movq	%0,%%rbp"::"m" (p));
-}
-		

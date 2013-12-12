@@ -37,16 +37,17 @@ child_fn1()
  int y;
 	fprintf(stderr,"Start pass1, child_fn1 &y=%p\n",&y);
 	
-	//for(y=1;y<1<<DELAY_FACTOR;y++)
+	/*for(y=1;y<1<<DELAY_FACTOR;y++)
 	time_t t = time(0);
 	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 1,child_fn1 y=%d\n",y);
+	*/
 	sched_sleep(&wq1);
 	fprintf(stderr,"Resuming child_fn1\n");
 //	for(y=1;y<1<<DELAY_FACTOR;y++)
-	t = time(0);
-	while(time(0)-t < 10)
+	time_t t = time(0);
+	while(time(0)-t < 1)
 		;
 	fprintf(stderr,"Done pass 2,child_fn1 y=%d\n",y);
 	sched_exit(22);
@@ -69,7 +70,7 @@ parent_fn()
 	 default:
 	 	kill(pid,SIGUSR1);//wq1
 	 	kill(pid,SIGUSR2);//wq1
-		while ((p=sched_wait(&y))>0)
+		while ((p=sched_wait(&y))==0)
 			fprintf(stderr,"Child pid %d return code %d\n",p,y);
 		return;
 	}
@@ -80,16 +81,17 @@ child_fn2()
  int y;
 	sched_nice(4);
 	fprintf(stderr,"Start pass1, child_fn2 &y=%p\n",&y);
-//	for(y=0;y<1<<DELAY_FACTOR;y++)
+/*	for(y=0;y<1<<DELAY_FACTOR;y++)
 	time_t t = time(0);
 	while(time(0)-t < 10)
 		;
 	fprintf(stderr,"Done pass 1,child_fn2 y=%d\n",y);
+	*/
 	sched_sleep(&wq2);
 	fprintf(stderr,"Resuming child_fn2\n");
 //	for(y=0;y<1<<DELAY_FACTOR;y++)
-	t = time(0);
-	while(time(0)-t < 10)
+	time_t t = time(0);
+	while(time(0)-t < 1)
 		;
 	fprintf(stderr,"Done pass 2,child_fn2 y=%d\n",y);
 	

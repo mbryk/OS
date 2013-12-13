@@ -91,6 +91,7 @@ int sched_fork(){
 		if(savectx(&(new->context))){
 			return 0;
 		}
+		adjstack(new->stack,new->stack+STACK_SIZE,diff)
 		new->context.regs[JB_SP] += diff;
 		new->context.regs[JB_BP] += diff;
 		sched_switch();
@@ -291,4 +292,40 @@ heap_percolateDown(struct sched_waitq *wq, int index){
 		} else break;
 	}
 	wq->queue[index] = temp;
+}
+
+adjstack(void *lim0,void *lim1,long adj)
+{
+ void **p;
+ void *prev,*new;
+#ifdef _LP64
+       __asm__(
+	"movq   %%rbp,%0"
+	:"=m" (p));
+#else
+       __asm__(
+	"movl   %%ebp,%0"
+	:"=m" (p));
+#endif
+	/* Now current bp (for adjstack fn) is in p */
+	/* Unwind stack to get to saved ebp addr of caller */
+	/* then begin adjustment process */
+	fprintf(stderr,"Asked to adjust child stack by %#lX bytes bet %p and %p\n",adj,lim0,lim1);
+	prev=*p;
+	p= prev + adj;
+	for(;;)
+	{
+		prev=*p;
+		new=prev+adj;
+		if (new<lim0 || new>lim1)
+		{
+			fprintf(stderr,"Enough already, saved BP @%p is %p\n",
+						p,prev);
+			break;
+		}
+		*p=new;
+		fprintf(stderr,"Adjusted saved bp @%p to %p\n",
+				p,*p);
+		p=new;
+	}
 }

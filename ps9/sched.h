@@ -54,5 +54,6 @@ heap_insert(struct sched_waitq*, struct sched_proc *proc);
 void *heap_deleteMin(struct sched_waitq*);
 heap_percolateUp(struct sched_waitq*, int);
 heap_percolateDown(struct sched_waitq*, int);
+adjstack(void *lim0,void *lim1,long adj);
 
 #endif

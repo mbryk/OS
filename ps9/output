@@ -1,0 +1,43 @@
+mark@ubuntu:~/OS/ps9$ ./test1
+Starting
+Hooray made it to init_fn, stkaddr 0x7fee5869bff4
+<<in child 1 addr 0x7fee58681fd4>>
+Child 1 - Go to sleep on wq1
+<<in parent addr 0x7fee5869bfcc>>
+<<in child 2 addr 0x7fee58671fb4>>
+Child 2 - Go to sleep on wq2
+Parent - Wake up wq1 & wq2
+Child 1 - Woken Up
+Child 2 - Woken Up
+Child 1 - exit(22)
+pid	ppid	state	stack			nice	weight	ticks
+1 			3 		0x7fee5869c000 	0 		1.000 	0
+2 	1		1 		0x7fee58682000 	0 		1.000 	283
+3 	1		0 		0x7fee58672000 	4 		2.441 	101
+Total CPU Ticks: 384
+Waited for child pid 2 return code 22
+pid	ppid	state	stack			nice	weight	ticks
+1 			3 		0x7fee5869c000 	0 		1.000 	0
+3 	1		1 		0x7fee58672000 	4 		2.441 	285
+Total CPU Ticks: 568
+Child 2 - exit(11)
+Waited for child pid 3 return code 11
+DONE!
+pid	ppid	state	stack			nice	weight	ticks
+1 			1 		0x7fee5869c000 	0 		1.000 	0
+Total CPU Ticks: 568
+
+mark@ubuntu:~/OS/ps9$ ./test2
+Starting
+pid	ppid	state	stack			nice	weight	ticks
+1 			1 		0x7f05a3c04000 	0 		1.000 	202
+2 	1		0 		0x7f05a3bea000 	-6 		0.262 	808
+3 	1		0 		0x7f05a3bda000 	-3 		0.512 	404
+4 	1		4 		0x7f05a3bca000 	0 		1.000 	202
+5 	1		4 		0x7f05a3bba000 	3 		1.953 	201
+6 	1		0 		0x7f05a3baa000 	6 		3.815 	101
+Total CPU Ticks: 1918
+
+mark@ubuntu:~/OS/ps9$ ./test3
+I ran this one and it worked. Prints 256 lines, which I didn't think you'd want to see.
+There's your "stress test".

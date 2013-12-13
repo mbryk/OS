@@ -5,6 +5,7 @@
 #include <time.h>
 #include "sched.h"
 
+#define DELAY_FACTOR 29
 struct sched_waitq wq1,wq2;
 
 init_fn()
@@ -17,16 +18,16 @@ init_fn()
 	{
 	 case -1:
 		fprintf(stderr,"fork failed\n");
-		return -1;
+		exit(-1);
 	 case 0:
 		child_fn1();
 		fprintf(stderr,"!!BUG!! at %s:%d\n",__FILE__,__LINE__);
-		return 0;
 	 default:
 		parent_fn();
 		break;
 	}
 	fprintf(stderr,"DONE!\n");
+	kill(getpid(),SIGABRT);
 	exit(0);
 }
 
@@ -37,10 +38,10 @@ child_fn1()
 	fprintf(stderr,"Child 1 - Go to sleep on wq1\n");
 	sched_sleep(&wq1);
 	fprintf(stderr,"Child 1 - Woken Up\n");
-	time_t t = time(0);
-	while(time(0)-t < 1)
+	for(x=1;x<1<<DELAY_FACTOR;x++)
 		;
 	fprintf(stderr,"Child 1 - exit(22)\n");
+	kill(getpid(),SIGABRT);
 	sched_exit(22);
 }
 
@@ -64,7 +65,7 @@ parent_fn()
 	 	fprintf(stderr,"Parent - Wake up wq1 & wq2\n");
 	 	kill(pid,SIGUSR1);//wq1
 	 	kill(pid,SIGUSR2);//wq2
-		while ((p=sched_wait(&y))==0)
+		while ((p=sched_wait(&y))>0)
 			fprintf(stderr,"Waited for child pid %d return code %d\n",p,y);
 		return;
 	}
@@ -78,9 +79,9 @@ child_fn2()
 	fprintf(stderr,"Child 2 - Go to sleep on wq2\n");
 	sched_sleep(&wq2);
 	fprintf(stderr,"Child 2 - Woken Up\n");
-	time_t t = time(0);
-	while(time(0)-t < 1)
+	for(x=1;x<1<<DELAY_FACTOR;x++)
 		;
+	kill(getpid(),SIGABRT);
 }
 
 wakeup_handler(int sig)

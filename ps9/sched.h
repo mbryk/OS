@@ -25,20 +25,19 @@ struct sched_proc{
 };
 struct sched_waitq{
 	int filled;
-	struct sched_proc *queue[SCHED_NPROC];
+	struct sched_proc *queue[SCHED_NPROC+1]; // My Implementation has no 0th entry.
 };
 
-/*** Scheduler Variables ***/
-int totalticks, runticks, quantumticks;
-sigset_t set;
-struct sched_proc *current;
+/*** Scheduler Global Variables ***/
+int totalticks, runticks, quantumticks, resched;
+sigset_t set; int pids;
+// init is a global var so that sched_ps can iterate through the tree of all processes on the system
+struct sched_proc *current, *init; 
 struct sched_waitq *rq;
-int pids; int totalexited;
-struct sched_proc *exited[SCHED_NPROC];
+struct sched_proc *exited[SCHED_NPROC]; int totalexited;
 
 sched_init(void (*init_fn)());
-sched_proc_init(struct sched_proc *p);
-sched_waitq_init(struct sched_waitq*);
+int sched_proc_init(struct sched_proc *p);
 int sched_fork();
 sched_exit(int);
 int sched_wait(int*); 
@@ -46,15 +45,14 @@ sched_nice(int);
 int sched_getpid();
 int sched_getppid();
 int sched_gettick();
-sched_ps(); // Sighandler
+sched_ps();
 sched_sleep(struct sched_waitq*);
 sched_switch();
-sched_tick(); // Sighandler
-
-void adjstack(void *lim0,void *lim1,long adj);
-void heap_insert(struct sched_waitq*, struct sched_proc *proc);
+sched_tick();
+sched_waitq_init(struct sched_waitq*);
+heap_insert(struct sched_waitq*, struct sched_proc *proc);
 void *heap_deleteMin(struct sched_waitq*);
-void heap_percolateUp(struct sched_waitq*, int);
-void heap_percolateDown(struct sched_waitq*, int);
+heap_percolateUp(struct sched_waitq*, int);
+heap_percolateDown(struct sched_waitq*, int);
 
 #endif
